@@ -1,0 +1,188 @@
+const Product = require('../models/Product');
+const User = require('../models/User');
+
+// @desc    Get all products
+// @route   GET /api/v1/products
+// @access  Public
+exports.getProducts = async (req, res, next) => {
+  try {
+    const { category } = req.query;
+    let query = {};
+    if (category && category.toLowerCase() !== 'all') {
+      query.category = { $regex: new RegExp(`^${category}$`, 'i') };
+    }
+    
+    const products = await Product.find(query);
+    res.status(200).json({ success: true, count: products.length, data: products });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Get single product
+// @route   GET /api/v1/products/:id
+// @access  Public
+exports.getProduct = async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ success: false, error: 'Product not found' });
+    }
+    res.status(200).json({ success: true, data: product });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Create new product
+// @route   POST /api/v1/products
+// @access  Public
+exports.createProduct = async (req, res, next) => {
+  try {
+    const product = await Product.create(req.body);
+    res.status(201).json({ success: true, data: product });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Update product
+// @route   PUT /api/v1/products/:id
+// @access  Public
+exports.updateProduct = async (req, res, next) => {
+  try {
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
+    if (!product) {
+      return res.status(404).json({ success: false, error: 'Product not found' });
+    }
+    res.status(200).json({ success: true, data: product });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Delete product
+// @route   DELETE /api/v1/products/:id
+// @access  Public
+exports.deleteProduct = async (req, res, next) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) {
+      return res.status(404).json({ success: false, error: 'Product not found' });
+    }
+    res.status(200).json({ success: true, data: {} });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Get cart
+// @route   GET /api/v1/products/cart
+// @access  Private
+exports.getCart = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).populate('cart.productId');
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    res.status(200).json({ success: true, data: user.cart });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Add to cart
+// @route   POST /api/v1/products/cart
+// @access  Private
+exports.addToCart = async (req, res, next) => {
+  try {
+    const { productId, quantity } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const itemIndex = user.cart.findIndex(item => item.productId.toString() === productId);
+    
+    if (itemIndex > -1) {
+      user.cart[itemIndex].quantity += (quantity || 1);
+    } else {
+      user.cart.push({ productId, quantity: quantity || 1 });
+    }
+
+    await user.save();
+    
+    // Populate to return full info by re-querying
+    const populatedUser = await User.findById(user._id).populate('cart.productId');
+    
+    res.status(200).json({ success: true, data: populatedUser.cart });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Update cart item quantity
+// @route   PUT /api/v1/products/cart/:productId
+// @access  Private
+exports.updateCartItem = async (req, res, next) => {
+  try {
+    const { quantity } = req.body;
+    const { productId } = req.params;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+    const itemIndex = user.cart.findIndex(item => item.productId.toString() === productId);
+    if (itemIndex > -1) {
+      if (quantity <= 0) {
+        user.cart.splice(itemIndex, 1);
+      } else {
+        user.cart[itemIndex].quantity = quantity;
+      }
+      await user.save();
+    }
+    
+    const populatedUser = await User.findById(user._id).populate('cart.productId');
+    res.status(200).json({ success: true, data: populatedUser.cart });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Remove from cart
+// @route   DELETE /api/v1/products/cart/:productId
+// @access  Private
+exports.removeFromCart = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+    user.cart = user.cart.filter(item => item.productId.toString() !== productId);
+    await user.save();
+    
+    const populatedUser = await User.findById(user._id).populate('cart.productId');
+    res.status(200).json({ success: true, data: populatedUser.cart });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Checkout cart
+// @route   POST /api/v1/products/cart/checkout
+// @access  Private
+exports.checkout = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+    
+    user.cart = [];
+    await user.save();
+    
+    res.status(200).json({ success: true, message: 'Checkout successful', data: [] });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
