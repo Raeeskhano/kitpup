@@ -1,6 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+const DEFAULT_CENTER = [34.1495, 73.2182]; // Abbottabad, Pakistan
+
+const getRescueIcon = () => new L.divIcon({
+  className: 'custom-map-marker',
+  html: `
+    <div style="display: flex; flex-direction: column; align-items: center;">
+      <div style="background-color: #dc2626; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 2px solid white;">
+        <svg style="width: 20px; height: 20px; color: white;" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2c-5.5 0-10 4.5-10 10s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-2-9.5c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm4 0c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm-2 4.5c-1.7 0-3-1.3-3-3h6c0 1.7-1.3 3-3 3z"/></svg>
+      </div>
+      <div style="width: 8px; height: 8px; background-color: #dc2626; border-radius: 50%; margin-top: 4px;"></div>
+    </div>
+  `,
+  iconSize: [40, 52],
+  iconAnchor: [20, 52]
+});
+
+const getListingIcon = () => new L.divIcon({
+  className: 'custom-map-marker',
+  html: `
+    <div style="display: flex; flex-direction: column; align-items: center;">
+      <div style="background-color: #92400E; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 2px solid white;">
+        <svg style="width: 20px; height: 20px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+      </div>
+      <div style="width: 8px; height: 8px; background-color: #92400E; border-radius: 50%; margin-top: 4px;"></div>
+    </div>
+  `,
+  iconSize: [40, 52],
+  iconAnchor: [20, 52]
+});
+
+const getHomeIcon = () => new L.divIcon({
+  className: 'custom-map-marker',
+  html: `
+    <div style="display: flex; flex-direction: column; align-items: center;">
+      <div style="background-color: #1f2937; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 2px solid white;">
+        <svg style="width: 20px; height: 20px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+      </div>
+      <div style="width: 8px; height: 8px; background-color: #1f2937; border-radius: 50%; margin-top: 4px;"></div>
+    </div>
+  `,
+  iconSize: [40, 52],
+  iconAnchor: [20, 52]
+});
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -224,16 +271,44 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Community Map (Left Side, Span 2) */}
-        <div className="lg:col-span-2 bg-[#E8DDD0] rounded-3xl overflow-hidden relative min-h-[400px] shadow-sm flex flex-col">
-          {/* // TODO: Replace with Mapbox or Google Maps integration */}
+        <div className="lg:col-span-2 bg-[#f0ede6] rounded-3xl overflow-hidden relative min-h-[400px] shadow-sm flex flex-col">
           
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#e6dfcc]/60 to-transparent"></div>
-
-          {/* Map UI Elements */}
-          <div className="relative z-10 p-6 flex flex-col h-full pointer-events-none">
+          <MapContainer 
+            center={DEFAULT_CENTER} 
+            zoom={13} 
+            scrollWheelZoom={true} 
+            zoomControl={true}
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            />
             
-            {/* Map Header / Search */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-sm flex items-center justify-between pointer-events-auto">
+            <Marker position={[34.1561, 73.2215]} icon={getRescueIcon()}>
+              <Popup>
+                <div className="font-bold text-red-600">Missing Golden Retriever</div>
+                <div className="text-xs">Last seen near Mansehra Road.</div>
+              </Popup>
+            </Marker>
+
+            <Marker position={[34.1448, 73.2123]} icon={getListingIcon()}>
+              <Popup>
+                <div className="font-bold text-[#92400E]">Free Dog Bed</div>
+                <div className="text-xs">Available for pickup near Supply Bazar.</div>
+              </Popup>
+            </Marker>
+
+            <Marker position={DEFAULT_CENTER} icon={getHomeIcon()}>
+              <Popup>
+                <div className="font-bold">Your Location</div>
+              </Popup>
+            </Marker>
+          </MapContainer>
+
+          {/* Map Header Overlay */}
+          <div className="relative z-10 p-6 pointer-events-none">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-sm flex items-center justify-between pointer-events-auto max-w-sm">
               <div>
                 <h3 className="font-bold text-gray-800 text-lg">Community Map</h3>
                 <p className="text-xs text-gray-500 font-medium">Showing active alerts and vets nearby.</p>
@@ -241,33 +316,6 @@ export default function Dashboard() {
               <button className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
                 <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
               </button>
-            </div>
-
-            {/* Map Pins */}
-            <div className="flex-1 relative pointer-events-auto mt-8">
-              {/* Red Paw Pin (Rescue Report) */}
-              <div className="absolute top-[30%] left-[35%] flex flex-col items-center">
-                <div className="bg-red-600 w-10 h-10 rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2c-5.5 0-10 4.5-10 10s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-2-9.5c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm4 0c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm-2 4.5c-1.7 0-3-1.3-3-3h6c0 1.7-1.3 3-3 3z"/></svg>
-                </div>
-                <div className="w-2 h-2 bg-red-600 rounded-full mt-1"></div>
-              </div>
-
-              {/* Brown Paw Pin (Pet Listing) */}
-              <div className="absolute bottom-[20%] right-[40%] flex flex-col items-center">
-                <div className="bg-[#92400E] w-10 h-10 rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                </div>
-                <div className="w-2 h-2 bg-[#92400E] rounded-full mt-1"></div>
-              </div>
-
-              {/* Dark House Pin (User Home) */}
-              <div className="absolute top-[15%] right-[25%] flex flex-col items-center">
-                <div className="bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                </div>
-                <div className="w-2 h-2 bg-gray-800 rounded-full mt-1"></div>
-              </div>
             </div>
           </div>
         </div>

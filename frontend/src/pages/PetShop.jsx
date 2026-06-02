@@ -111,7 +111,11 @@ export default function PetShop() {
               
               <div className="relative h-40 bg-gray-50 overflow-hidden">
                 {product.photos && product.photos.length > 0 ? (
-                  <img src={product.photos[0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img 
+                    src={product.photos[0].startsWith('/uploads/') ? `http://localhost:5000${product.photos[0]}` : product.photos[0]} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">No Image</div>
                 )}

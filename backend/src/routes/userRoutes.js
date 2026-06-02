@@ -6,7 +6,11 @@ const {
   updateUser,
   deleteUser,
   register,
-  login
+  login,
+  getMe,
+  updateMe,
+  updatePassword,
+  getActivity
 } = require('../controllers/userController');
 
 const { requireAuth } = require('../middlewares/auth');
@@ -20,6 +24,14 @@ router
   .route('/')
   .get(requireAuth, getUsers)
   .post(requireAuth, createUser);
+
+router
+  .route('/me')
+  .get(requireAuth, getMe)
+  .patch(requireAuth, updateMe);
+
+router.get('/me/activity', requireAuth, getActivity);
+router.patch('/me/password', requireAuth, updatePassword);
 
 router
   .route('/:id')

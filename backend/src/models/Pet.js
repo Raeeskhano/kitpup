@@ -18,11 +18,19 @@ const petSchema = new mongoose.Schema({
   },
   age: {
     type: String,
-    required: true
+    required: false
   },
   gender: {
     type: String,
-    required: true
+    required: false
+  },
+  weight: {
+    type: String,
+    required: false
+  },
+  vaccinationStatus: {
+    type: Boolean,
+    default: false
   },
   description: {
     type: String,
@@ -30,16 +38,20 @@ const petSchema = new mongoose.Schema({
   },
   fee: {
     type: Number,
-    required: true
+    required: false
   },
   location: {
     type: String,
     required: true
   },
+  lastSeenDate: {
+    type: Date,
+    required: false
+  },
   status: {
     type: String,
     default: 'active',
-    enum: ['active', 'adopted', 'lost', 'found']
+    enum: ['active', 'adopted', 'lost', 'found', 'reunited', 'personal']
   },
   photos: {
     type: [String],

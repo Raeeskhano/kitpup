@@ -17,11 +17,13 @@ const userRoutes = require('./routes/userRoutes');
 const petRoutes = require('./routes/petRoutes');
 const productRoutes = require('./routes/productRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 // Mount routers
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/pets', petRoutes);
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/reports', reportRoutes);
+app.use('/api/v1/ai', aiRoutes);
 
 module.exports = app;

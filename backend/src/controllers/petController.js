@@ -6,11 +6,11 @@ const User = require('../models/User');
 // @access  Public
 exports.getPets = async (req, res, next) => {
   try {
-    const { species, minFee, maxFee, search, breed, location, sort, status, limit } = req.query;
+    const { species, minFee, maxFee, search, breed, location, sort, status, limit, page } = req.query;
 
     let query = {};
 
-    if (species) query.species = species;
+    if (species && species !== 'All') query.species = species;
     if (status) query.status = status;
     if (breed && breed !== 'Any Breed') query.breed = breed;
     if (location) query.location = { $regex: location, $options: 'i' };
@@ -32,13 +32,16 @@ exports.getPets = async (req, res, next) => {
       mongooseQuery = mongooseQuery.sort('-createdAt');
     }
 
-    if (limit) {
-      mongooseQuery = mongooseQuery.limit(Number(limit));
-    }
+    // Pagination
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const startIndex = (pageNum - 1) * limitNum;
+    
+    mongooseQuery = mongooseQuery.skip(startIndex).limit(limitNum);
 
     const pets = await mongooseQuery;
 
-    res.status(200).json({ success: true, count: pets.length, data: pets });
+    res.status(200).json({ success: true, count: pets.length, page: pageNum, data: pets });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }
@@ -133,6 +136,96 @@ exports.toggleFavorite = async (req, res, next) => {
 
     await user.save();
     res.status(200).json({ success: true, favorites: user.favorites });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Notify Nearby Users
+// @route   POST /api/v1/pets/:id/notify
+// @access  Private
+exports.notifyNearby = async (req, res, next) => {
+  try {
+    // In a real application, this would calculate proximity to users 
+    // and send push notifications or emails.
+    // For now, we mock success.
+    res.status(200).json({ success: true, message: 'Nearby users have been notified!' });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Get logged in user's personal pets
+// @route   GET /api/v1/pets/my
+// @access  Private
+exports.getMyPets = async (req, res, next) => {
+  try {
+    const pets = await Pet.find({ owner: req.user.id, status: 'personal' });
+    res.status(200).json({ success: true, count: pets.length, data: pets });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Create a personal pet
+// @route   POST /api/v1/pets/my
+// @access  Private
+exports.createMyPet = async (req, res, next) => {
+  try {
+    // Force owner and status
+    req.body.owner = req.user.id;
+    req.body.status = 'personal';
+
+    // Handle uploaded photos
+    if (req.files && req.files.length > 0) {
+      req.body.photos = req.files.map(f => `http://localhost:5000/uploads/${f.filename}`);
+    }
+
+    const pet = await Pet.create(req.body);
+    res.status(201).json({ success: true, data: pet });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Update a personal pet
+// @route   PATCH /api/v1/pets/my/:id
+// @access  Private
+exports.updateMyPet = async (req, res, next) => {
+  try {
+    let pet = await Pet.findById(req.params.id);
+    if (!pet) return res.status(404).json({ success: false, error: 'Pet not found' });
+    
+    // Make sure user owns this pet
+    if (pet.owner.toString() !== req.user.id) {
+      return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
+
+    if (req.files && req.files.length > 0) {
+      req.body.photos = req.files.map(f => `http://localhost:5000/uploads/${f.filename}`);
+    }
+
+    pet = await Pet.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    res.status(200).json({ success: true, data: pet });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Delete a personal pet
+// @route   DELETE /api/v1/pets/my/:id
+// @access  Private
+exports.deleteMyPet = async (req, res, next) => {
+  try {
+    const pet = await Pet.findById(req.params.id);
+    if (!pet) return res.status(404).json({ success: false, error: 'Pet not found' });
+
+    if (pet.owner.toString() !== req.user.id) {
+      return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
+
+    await pet.deleteOne();
+    res.status(200).json({ success: true, data: {} });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }

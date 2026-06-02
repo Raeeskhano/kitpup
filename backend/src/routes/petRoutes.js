@@ -7,7 +7,12 @@ const {
   createPet,
   updatePet,
   deletePet,
-  toggleFavorite
+  toggleFavorite,
+  notifyNearby,
+  getMyPets,
+  createMyPet,
+  updateMyPet,
+  deleteMyPet
 } = require('../controllers/petController');
 
 const { requireAuth } = require('../middlewares/auth');
@@ -26,17 +31,32 @@ const upload = multer({ storage });
 
 router
   .route('/')
-  .get(requireAuth, getPets)
+  .get(getPets) // Removed requireAuth for GET to allow public viewing
   .post(requireAuth, upload.array('photos', 5), createPet);
 
 router
+  .route('/my')
+  .get(requireAuth, getMyPets)
+  .post(requireAuth, upload.array('photos', 5), createMyPet);
+
+router
+  .route('/my/:id')
+  .patch(requireAuth, upload.array('photos', 5), updateMyPet)
+  .delete(requireAuth, deleteMyPet);
+
+router
   .route('/:id')
-  .get(requireAuth, getPet)
+  .get(getPet) // Removed requireAuth
   .put(requireAuth, updatePet)
+  .patch(requireAuth, updatePet)
   .delete(requireAuth, deletePet);
 
 router
   .route('/:id/favorite')
   .patch(requireAuth, toggleFavorite);
+
+router
+  .route('/:id/notify')
+  .post(requireAuth, notifyNearby);
 
 module.exports = router;

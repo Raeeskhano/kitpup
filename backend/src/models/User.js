@@ -22,6 +22,9 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
+  avatar: {
+    type: String
+  },
   contactNumber: {
     type: String
   },
@@ -41,7 +44,24 @@ const userSchema = new mongoose.Schema({
       type: Number,
       default: 1
     }
-  }]
+  }],
+  preferences: {
+    measurementSystem: {
+      type: String,
+      enum: ['Imperial', 'Metric'],
+      default: 'Imperial'
+    }
+  },
+  notifications: {
+    push: {
+      type: Boolean,
+      default: true
+    },
+    email: {
+      type: Boolean,
+      default: false
+    }
+  }
 }, { timestamps: true });
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
