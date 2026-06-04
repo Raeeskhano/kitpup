@@ -7,20 +7,29 @@ export default function PetShop() {
   const [loading, setLoading] = useState(true);
   const [addingToCartId, setAddingToCartId] = useState(null);
 
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [postForm, setPostForm] = useState({
+    name: '', category: 'Food & Treats', price: '', originalPrice: '', stock: '', description: ''
+  });
+  const [postPhotos, setPostPhotos] = useState(null);
+  const [postStatus, setPostStatus] = useState('');
+
   const categories = ['All', 'Food & Treats', 'Apparel', 'Toys', 'Grooming', 'Beds & Crates'];
 
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`http://localhost:5000/api/v1/products?category=${category}`);
+      setProducts(res.data.data);
+    } catch (err) {
+      console.error('Failed to load products', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(`http://localhost:5000/api/v1/products?category=${category}`);
-        setProducts(res.data.data);
-      } catch (err) {
-        console.error('Failed to load products', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchProducts();
   }, [category]);
 
@@ -50,6 +59,65 @@ export default function PetShop() {
     }
   };
 
+  const handleOpenPostModal = async () => {
+    try {
+      const storedUser = localStorage.getItem('kitpup_user');
+      if (!storedUser) {
+        alert("Please login first.");
+        return;
+      }
+      setIsModalOpen(true);
+    } catch (err) {
+      console.error(err);
+      alert("Please login first.");
+    }
+  };
+
+  const handlePostSubmit = async (e) => {
+    e.preventDefault();
+    setPostStatus('submitting');
+    try {
+      const storedUser = localStorage.getItem('kitpup_user');
+      let token = '';
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.token || '';
+      }
+
+      const formData = new FormData();
+      Object.keys(postForm).forEach(key => {
+        if (postForm[key] !== '') {
+          formData.append(key, postForm[key]);
+        }
+      });
+      
+      if (postPhotos) {
+        for (let i = 0; i < postPhotos.length; i++) {
+          formData.append('photos', postPhotos[i]);
+        }
+      }
+
+      await axios.post('http://localhost:5000/api/v1/products', formData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      setPostStatus('success');
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setPostStatus('');
+        setPostForm({ name: '', category: 'Food & Treats', price: '', originalPrice: '', stock: '', description: '' });
+        setPostPhotos(null);
+        fetchProducts();
+      }, 2000);
+    } catch (err) {
+      console.error(err);
+      setPostStatus('error');
+    }
+  };
+
   const renderStars = (rating) => {
     return (
       <div className="flex text-yellow-400 text-xs">
@@ -62,9 +130,14 @@ export default function PetShop() {
 
   return (
     <div className="max-w-7xl mx-auto text-left">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 tracking-tight">Accessories Shop</h1>
-        <p className="text-gray-500 mt-2">Curated essentials for your best friend.</p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-bold text-gray-800 tracking-tight">Accessories Shop</h1>
+          <p className="text-gray-500 mt-2">Curated essentials for your best friend.</p>
+        </div>
+        <button onClick={handleOpenPostModal} className="bg-brand-orange text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-shadow whitespace-nowrap self-start md:self-auto">
+          + Add Item
+        </button>
       </div>
 
       {/* Categories Horizontal Scroll */}
@@ -112,7 +185,7 @@ export default function PetShop() {
               <div className="relative h-40 bg-gray-50 overflow-hidden">
                 {product.photos && product.photos.length > 0 ? (
                   <img 
-                    src={product.photos[0].startsWith('/uploads/') ? `http://localhost:5000${product.photos[0]}` : product.photos[0]} 
+                    src={product.photos[0].startsWith('/') ? `http://localhost:5000${product.photos[0]}` : product.photos[0]} 
                     alt={product.name} 
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                   />
@@ -180,6 +253,79 @@ export default function PetShop() {
           <button className="px-8 py-3 bg-white border-2 border-gray-200 text-gray-600 rounded-full font-bold shadow-sm hover:border-gray-300 transition-colors">
             Load More Accessories
           </button>
+        </div>
+      )}
+
+      {/* Post Item Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
+            <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div className="p-8">
+              <h2 className="text-3xl font-bold text-gray-800 mb-6">Add Accessory</h2>
+              
+              {postStatus === 'success' && (
+                <div className="mb-6 p-4 bg-green-50 text-green-700 border border-green-200 rounded-xl font-bold flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                  Item added successfully!
+                </div>
+              )}
+
+              {postStatus === 'error' && (
+                <div className="mb-6 p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl font-bold">
+                  Failed to add item. Please try again.
+                </div>
+              )}
+
+              <form onSubmit={handlePostSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Product Name</label>
+                    <input type="text" required value={postForm.name} onChange={e => setPostForm({...postForm, name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-brand-orange focus:border-brand-orange" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Category</label>
+                    <select value={postForm.category} onChange={e => setPostForm({...postForm, category: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-brand-orange focus:border-brand-orange bg-white">
+                      {categories.filter(c => c !== 'All').map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Price (PKR)</label>
+                    <input type="number" min="0" required value={postForm.price} onChange={e => setPostForm({...postForm, price: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-brand-orange focus:border-brand-orange" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Original Price (Optional)</label>
+                    <input type="number" min="0" value={postForm.originalPrice} onChange={e => setPostForm({...postForm, originalPrice: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-brand-orange focus:border-brand-orange" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Stock Quantity</label>
+                    <input type="number" min="0" required value={postForm.stock} onChange={e => setPostForm({...postForm, stock: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-brand-orange focus:border-brand-orange" />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
+                  <textarea rows="3" required value={postForm.description} onChange={e => setPostForm({...postForm, description: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-brand-orange focus:border-brand-orange"></textarea>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Upload Photos</label>
+                  <input type="file" multiple accept="image/*" onChange={e => setPostPhotos(e.target.files)} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-brand-orange hover:file:bg-orange-100" />
+                </div>
+
+                <div className="flex justify-end gap-4 mt-8">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2 border border-gray-300 rounded-xl text-gray-700 font-bold hover:bg-gray-50">Cancel</button>
+                  <button type="submit" disabled={postStatus === 'submitting'} className="px-6 py-2 bg-brand-orange text-white rounded-xl font-bold hover:bg-orange-600 shadow-sm disabled:opacity-50">
+                    {postStatus === 'submitting' ? 'Adding...' : 'Add Item'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       )}
     </div>

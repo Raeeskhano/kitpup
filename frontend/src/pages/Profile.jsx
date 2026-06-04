@@ -5,12 +5,14 @@ import { useNavigate } from 'react-router-dom';
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [pets, setPets] = useState([]);
+  const [products, setProducts] = useState([]);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Modals state
   const [activeModal, setActiveModal] = useState(null); // 'profile', 'add_pet', 'edit_pet'
   const [selectedPet, setSelectedPet] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [toast, setToast] = useState('');
   const [error, setError] = useState('');
 
@@ -18,6 +20,11 @@ export default function Profile() {
   const [editName, setEditName] = useState('');
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState('');
+
+  // Product Form state
+  const [productForm, setProductForm] = useState({
+    name: '', category: 'Food & Treats', price: '', originalPrice: '', stock: '', description: ''
+  });
 
   // Pet Form state
   const [petForm, setPetForm] = useState({
@@ -28,9 +35,13 @@ export default function Profile() {
     gender: 'Male',
     weight: '',
     vaccinationStatus: false,
-    description: '',
-    location: ''
+    location: '',
+    status: 'personal',
+    fee: '',
+    contactNumber: '',
+    whatsappNumber: ''
   });
+  const [petPhotos, setPetPhotos] = useState(null);
 
   const getToken = () => {
     const storedUser = localStorage.getItem('kitpup_user');
@@ -41,10 +52,11 @@ export default function Profile() {
     try {
       const config = { headers: { Authorization: `Bearer ${getToken()}` } };
       
-      const [userRes, petsRes, actRes] = await Promise.all([
+      const [userRes, petsRes, actRes, productsRes] = await Promise.all([
         axios.get('http://localhost:5000/api/v1/users/me', config),
         axios.get('http://localhost:5000/api/v1/pets/my', config),
-        axios.get('http://localhost:5000/api/v1/users/me/activity?limit=3', config)
+        axios.get('http://localhost:5000/api/v1/users/me/activity?limit=3', config),
+        axios.get('http://localhost:5000/api/v1/products/my', config)
       ]);
 
       setUser(userRes.data.data);
@@ -52,6 +64,7 @@ export default function Profile() {
       setAvatarPreview(userRes.data.data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userRes.data.data.name)}&background=f97316&color=fff`);
       
       setPets(petsRes.data.data || []);
+      setProducts(productsRes.data.data || []);
       setActivities(actRes.data.data || []);
       setLoading(false);
     } catch (err) {
@@ -113,7 +126,8 @@ export default function Profile() {
 
   // Pet Actions
   const openAddPet = () => {
-    setPetForm({ name: '', species: 'Dog', breed: '', age: '', gender: 'Male', weight: '', vaccinationStatus: false, description: '', location: '' });
+    setPetForm({ name: '', species: 'Dog', breed: '', age: '', gender: 'Male', weight: '', vaccinationStatus: false, description: '', location: '', status: 'personal', fee: '', contactNumber: user?.contactNumber || '', whatsappNumber: user?.whatsappNumber || '' });
+    setPetPhotos(null);
     setSelectedPet(null);
     setError('');
     setActiveModal('pet');
@@ -129,8 +143,13 @@ export default function Profile() {
       weight: pet.weight || '',
       vaccinationStatus: pet.vaccinationStatus || false,
       description: pet.description || '',
-      location: pet.location || ''
+      location: pet.location || '',
+      status: pet.status || 'personal',
+      fee: pet.fee !== undefined && pet.fee !== null ? pet.fee : '',
+      contactNumber: user?.contactNumber || '',
+      whatsappNumber: user?.whatsappNumber || ''
     });
+    setPetPhotos(null);
     setSelectedPet(pet);
     setError('');
     setActiveModal('pet');
@@ -146,18 +165,36 @@ export default function Profile() {
 
     try {
       const config = { headers: { Authorization: `Bearer ${getToken()}` } };
+
+      // Update user contact info
+      await axios.patch('http://localhost:5000/api/v1/users/me', 
+        { contactNumber: petForm.contactNumber, whatsappNumber: petForm.whatsappNumber },
+        config
+      );
       
-      // we need to set description to a default if empty to satisfy the Pet schema
+      const formData = new FormData();
       const payload = { ...petForm, description: petForm.description || 'My personal pet.', location: petForm.location || 'Home' };
+
+      Object.keys(payload).forEach(key => {
+        if (key !== 'contactNumber' && key !== 'whatsappNumber' && payload[key] !== '' && payload[key] !== null && payload[key] !== undefined) {
+          formData.append(key, payload[key]);
+        }
+      });
+
+      if (petPhotos) {
+        for (let i = 0; i < petPhotos.length; i++) {
+          formData.append('photos', petPhotos[i]);
+        }
+      }
 
       if (selectedPet) {
         // Update
-        const res = await axios.patch(`http://localhost:5000/api/v1/pets/my/${selectedPet._id}`, payload, config);
+        const res = await axios.patch(`http://localhost:5000/api/v1/pets/my/${selectedPet._id}`, formData, config);
         setPets(pets.map(p => p._id === selectedPet._id ? res.data.data : p));
         showToast('Pet updated!');
       } else {
         // Create
-        const res = await axios.post('http://localhost:5000/api/v1/pets/my', payload, config);
+        const res = await axios.post('http://localhost:5000/api/v1/pets/my', formData, config);
         setPets([...pets, res.data.data]);
         showToast('Pet added!');
       }
@@ -178,6 +215,64 @@ export default function Profile() {
       showToast('Pet removed.');
     } catch (err) {
       setError('Failed to remove pet.');
+    }
+  };
+
+  // Product Actions
+  const openAddProduct = () => {
+    setProductForm({ name: '', category: 'Food & Treats', price: '', originalPrice: '', stock: '', description: '' });
+    setSelectedProduct(null);
+    setError('');
+    setActiveModal('product');
+  };
+
+  const openEditProduct = (product) => {
+    setProductForm({
+      name: product.name,
+      category: product.category,
+      price: product.price,
+      originalPrice: product.originalPrice || '',
+      stock: product.stock,
+      description: product.description || ''
+    });
+    setSelectedProduct(product);
+    setError('');
+    setActiveModal('product');
+  };
+
+  const handleSaveProduct = async () => {
+    setError('');
+    if (!productForm.name || !productForm.price || !productForm.stock) {
+      return setError('Name, Price and Stock are required.');
+    }
+    try {
+      const config = { headers: { Authorization: `Bearer ${getToken()}` } };
+      if (selectedProduct) {
+        const res = await axios.patch(`http://localhost:5000/api/v1/products/my/${selectedProduct._id}`, productForm, config);
+        setProducts(products.map(p => p._id === selectedProduct._id ? res.data.data : p));
+        showToast('Accessory updated!');
+      } else {
+        const res = await axios.post('http://localhost:5000/api/v1/products', productForm, config);
+        setProducts([...products, res.data.data]);
+        showToast('Accessory added!');
+      }
+      setActiveModal(null);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to save accessory');
+    }
+  };
+
+  const handleRemoveProduct = async () => {
+    if (!selectedProduct) return;
+    try {
+      await axios.delete(`http://localhost:5000/api/v1/products/my/${selectedProduct._id}`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      setProducts(products.filter(p => p._id !== selectedProduct._id));
+      setActiveModal(null);
+      showToast('Accessory removed.');
+    } catch (err) {
+      setError('Failed to remove accessory.');
     }
   };
 
@@ -284,6 +379,54 @@ export default function Profile() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-gray-800 truncate leading-tight group-hover:text-brand-orange transition-colors">{pet.name}</p>
                   <p className="text-[10px] text-gray-500 mt-0.5 truncate">{pet.breed}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* MY ACCESSORIES */}
+      <div className="mt-8">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-gray-800">My Accessories</h2>
+          <button 
+            onClick={openAddProduct}
+            className="px-4 py-2 bg-[#92400E] text-white font-bold rounded-xl shadow-sm hover:opacity-90 transition-opacity flex items-center gap-2 text-sm"
+          >
+            <span>+</span> Add Item
+          </button>
+        </div>
+
+        {products.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center flex flex-col items-center">
+            <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center text-brand-orange mb-4">
+               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            </div>
+            <p className="font-bold text-gray-800">No accessories listed yet.</p>
+            <p className="text-sm text-gray-500 mt-1 mb-4">Sell items your pet no longer needs.</p>
+            <button onClick={openAddProduct} className="text-brand-orange font-bold text-sm">
+              + Add Your First Item
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+            {products.map(product => (
+              <div 
+                key={product._id} 
+                onClick={() => openEditProduct(product)}
+                className="bg-white rounded-xl p-2.5 shadow-sm border border-gray-100 flex items-center cursor-pointer hover:border-brand-orange/30 transition-colors group"
+              >
+                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-200 mr-2.5 group-hover:border-brand-orange/30 transition-colors">
+                   {product.photos && product.photos.length > 0 ? (
+                     <img src={product.photos[0].startsWith('/') ? `http://localhost:5000${product.photos[0]}` : product.photos[0]} alt={product.name} className="w-full h-full object-cover" />
+                   ) : (
+                     <span className="text-xs font-bold text-gray-400 uppercase">{product.name.charAt(0)}</span>
+                   )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-800 truncate leading-tight group-hover:text-brand-orange transition-colors">{product.name}</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5 truncate">PKR {product.price}</p>
                 </div>
               </div>
             ))}
@@ -421,8 +564,19 @@ export default function Profile() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">WEIGHT</label>
-                <input type="text" value={petForm.weight} onChange={e => setPetForm({...petForm, weight: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50" placeholder="e.g. 15 lbs" />
+                <label className="block text-xs font-bold text-gray-600 mb-1">LOCATION (CITY, STATE)</label>
+                <input type="text" value={petForm.location} onChange={e => setPetForm({...petForm, location: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50" placeholder="e.g. New York, NY" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">WEIGHT</label>
+                  <input type="text" value={petForm.weight} onChange={e => setPetForm({...petForm, weight: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50" placeholder="e.g. 15 lbs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">ADOPTION FEE / PRICE (PKR)</label>
+                  <input type="number" min="0" value={petForm.fee} onChange={e => setPetForm({...petForm, fee: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50" placeholder="e.g. 5000 (Optional)" />
+                </div>
               </div>
 
               <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
@@ -439,8 +593,37 @@ export default function Profile() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">NOTES</label>
+                <label className="block text-xs font-bold text-gray-600 mb-1">NOTES / DESCRIPTION</label>
                 <textarea rows="3" value={petForm.description} onChange={e => setPetForm({...petForm, description: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50" placeholder="Any special needs or notes..."></textarea>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">YOUR PHONE NUMBER</label>
+                  <input type="text" value={petForm.contactNumber} onChange={e => setPetForm({...petForm, contactNumber: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50" placeholder="+1234567890" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">WHATSAPP (OPTIONAL)</label>
+                  <input type="text" value={petForm.whatsappNumber} onChange={e => setPetForm({...petForm, whatsappNumber: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50" placeholder="+1234567890" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">UPLOAD PHOTOS</label>
+                <input type="file" multiple accept="image/*" onChange={e => setPetPhotos(e.target.files)} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-brand-orange hover:file:bg-orange-100" />
+              </div>
+
+              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-orange-50/50">
+                <div>
+                  <p className="text-sm font-bold text-brand-orange">List in Marketplace</p>
+                  <p className="text-xs text-gray-500">Allow others to see this pet for adoption/sale.</p>
+                </div>
+                <button 
+                  onClick={() => setPetForm({...petForm, status: petForm.status === 'active' ? 'personal' : 'active'})}
+                  className={`w-12 h-6 rounded-full flex items-center transition-colors px-1 ${petForm.status === 'active' ? 'bg-brand-orange' : 'bg-gray-300'}`}
+                >
+                  <div className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform ${petForm.status === 'active' ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                </button>
               </div>
             </div>
 
@@ -451,6 +634,63 @@ export default function Profile() {
               {selectedPet && (
                 <button onClick={handleRemovePet} className="w-full text-red-600 font-bold py-3 rounded-lg hover:bg-red-50 transition-colors">
                   Remove Pet
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PRODUCT MODAL */}
+      {activeModal === 'product' && (
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center shrink-0">
+              <h3 className="font-bold text-gray-800">{selectedProduct ? 'Edit Accessory' : 'Add Accessory'}</h3>
+              <button onClick={() => setActiveModal(null)} className="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              {error && <p className="text-red-500 text-sm bg-red-50 p-2 rounded">{error}</p>}
+              
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">PRODUCT NAME</label>
+                <input type="text" value={productForm.name} onChange={e => setProductForm({...productForm, name: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">CATEGORY</label>
+                <select value={productForm.category} onChange={e => setProductForm({...productForm, category: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50 bg-white">
+                  {['Food & Treats', 'Apparel', 'Toys', 'Grooming', 'Beds & Crates'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">PRICE (PKR)</label>
+                  <input type="number" min="0" value={productForm.price} onChange={e => setProductForm({...productForm, price: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">STOCK</label>
+                  <input type="number" min="0" value={productForm.stock} onChange={e => setProductForm({...productForm, stock: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">DESCRIPTION</label>
+                <textarea rows="3" value={productForm.description} onChange={e => setProductForm({...productForm, description: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-orange/50"></textarea>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 bg-gray-50 shrink-0 space-y-3">
+              <button onClick={handleSaveProduct} className="w-full bg-brand-orange text-white font-bold py-3 rounded-lg hover:bg-brand-dark-brown transition-colors">
+                Save Changes
+              </button>
+              {selectedProduct && (
+                <button onClick={handleRemoveProduct} className="w-full text-red-600 font-bold py-3 rounded-lg hover:bg-red-50 transition-colors">
+                  Remove Accessory
                 </button>
               )}
             </div>

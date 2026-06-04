@@ -11,18 +11,20 @@ exports.getPets = async (req, res, next) => {
 
     let query = {};
 
-    // Exclude own pets if user is logged in
+    // We no longer exclude own pets so users can see their own listings in the marketplace
+    /*
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       const token = req.headers.authorization.split(' ')[1];
       if (token) {
         try {
           const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
-          query.owner = { $ne: decoded.id };
+          // query.owner = { $ne: decoded.id };
         } catch (err) {
           // Token invalid or expired, ignore
         }
       }
     }
+    */
 
     if (species && species !== 'All') query.species = species;
     if (status) query.status = status;
@@ -186,9 +188,17 @@ exports.getMyPets = async (req, res, next) => {
 // @access  Private
 exports.createMyPet = async (req, res, next) => {
   try {
-    // Force owner and status
+    // Force owner
     req.body.owner = req.user.id;
-    req.body.status = 'personal';
+    if (!req.body.status) {
+      req.body.status = 'personal';
+    }
+    
+    if (req.body.fee) {
+      req.body.fee = Number(req.body.fee);
+    } else {
+      req.body.fee = 0;
+    }
 
     // Handle uploaded photos
     if (req.files && req.files.length > 0) {
@@ -213,6 +223,10 @@ exports.updateMyPet = async (req, res, next) => {
     // Make sure user owns this pet
     if (pet.owner.toString() !== req.user.id) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
+
+    if (req.body.fee) {
+      req.body.fee = Number(req.body.fee);
     }
 
     if (req.files && req.files.length > 0) {

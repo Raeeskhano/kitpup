@@ -39,7 +39,12 @@ exports.getProduct = async (req, res, next) => {
 // @access  Public
 exports.createProduct = async (req, res, next) => {
   try {
-    const product = await Product.create(req.body);
+    const productData = { ...req.body };
+    productData.owner = req.user.id;
+    if (req.files && req.files.length > 0) {
+      productData.photos = req.files.map(file => `/uploads/${file.filename}`);
+    }
+    const product = await Product.create(productData);
     res.status(201).json({ success: true, data: product });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
@@ -182,6 +187,62 @@ exports.checkout = async (req, res, next) => {
     await user.save();
     
     res.status(200).json({ success: true, message: 'Checkout successful', data: [] });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Get logged in user's products
+// @route   GET /api/v1/products/my
+// @access  Private
+exports.getMyProducts = async (req, res, next) => {
+  try {
+    const products = await Product.find({ owner: req.user.id });
+    res.status(200).json({ success: true, count: products.length, data: products });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Update a personal product
+// @route   PATCH /api/v1/products/my/:id
+// @access  Private
+exports.updateMyProduct = async (req, res, next) => {
+  try {
+    let product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
+    
+    // Make sure user owns this product
+    if (product.owner.toString() !== req.user.id) {
+      return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
+
+    const productData = { ...req.body };
+    if (req.files && req.files.length > 0) {
+      productData.photos = req.files.map(file => `/uploads/${file.filename}`);
+    }
+
+    product = await Product.findByIdAndUpdate(req.params.id, productData, { new: true, runValidators: true });
+    res.status(200).json({ success: true, data: product });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Delete a personal product
+// @route   DELETE /api/v1/products/my/:id
+// @access  Private
+exports.deleteMyProduct = async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
+
+    if (product.owner.toString() !== req.user.id) {
+      return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
+
+    await product.deleteOne();
+    res.status(200).json({ success: true, data: {} });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }

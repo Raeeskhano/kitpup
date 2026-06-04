@@ -1,5 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix for default marker icon in react-leaflet
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow,
+    iconAnchor: [12, 41]
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
 
 export default function RescueReport() {
   const [photos, setPhotos] = useState([]);
@@ -7,6 +22,7 @@ export default function RescueReport() {
   const [animalType, setAnimalType] = useState('');
   const [urgencyLevel, setUrgencyLevel] = useState('');
   const [location, setLocation] = useState('');
+  const [mapPosition, setMapPosition] = useState([34.1495, 73.2115]); // Abbottabad, Pakistan
   const [description, setDescription] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,6 +33,53 @@ export default function RescueReport() {
   const [loadingReports, setLoadingReports] = useState(true);
 
   const fileInputRef = useRef(null);
+
+  const MapClickHandler = () => {
+    useMapEvents({
+      click: async (e) => {
+        const { lat, lng } = e.latlng;
+        setMapPosition([lat, lng]);
+        try {
+          const res = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+          if (res.data && res.data.display_name) {
+            const parts = res.data.display_name.split(',');
+            setLocation(parts.slice(0, 3).join(', '));
+          } else {
+            setLocation(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+          }
+        } catch (err) {
+          setLocation(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+        }
+      }
+    });
+    return null;
+  };
+
+  const MapCenterUpdater = ({ position }) => {
+    const map = useMap();
+    useEffect(() => {
+      if (position) {
+        map.setView(position, map.getZoom());
+      }
+    }, [position, map]);
+    return null;
+  };
+
+  const handleAddressSearch = async () => {
+    if (!location || location === 'Locating...') return;
+    try {
+      const res = await axios.get(`https://photon.komoot.io/api/?q=${encodeURIComponent(location)}&limit=1`);
+      if (res.data && res.data.features && res.data.features.length > 0) {
+        const coords = res.data.features[0].geometry.coordinates;
+        setMapPosition([coords[1], coords[0]]); // GeoJSON uses [lon, lat]
+      } else {
+        alert('Location not found. Please try a different search term.');
+      }
+    } catch (err) {
+      console.error('Failed to geocode address', err);
+      alert('Failed to search location. Please try again.');
+    }
+  };
 
   const getToken = () => {
     const storedUser = localStorage.getItem('kitpup_user');
@@ -82,6 +145,7 @@ export default function RescueReport() {
     navigator.geolocation.getCurrentPosition(async (position) => {
       try {
         const { latitude, longitude } = position.coords;
+        setMapPosition([latitude, longitude]);
         // Reverse geocoding using Nominatim
         const res = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
         if (res.data && res.data.display_name) {
@@ -284,26 +348,41 @@ export default function RescueReport() {
               </button>
             </div>
             
-            <div className="relative mb-3">
-              <input 
-                type="text" 
-                required
-                value={location}
-                onChange={e => setLocation(e.target.value)}
-                placeholder="Enter an address or landmark..."
-                disabled={isSubmitting}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange pl-10"
-              />
-              <svg className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            <div className="relative mb-3 flex gap-2">
+              <div className="relative flex-1">
+                <input 
+                  type="text" 
+                  required
+                  value={location}
+                  onChange={e => setLocation(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddressSearch())}
+                  placeholder="Enter an address or landmark..."
+                  disabled={isSubmitting}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange pl-10"
+                />
+                <svg className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              </div>
+              <button 
+                type="button"
+                onClick={handleAddressSearch}
+                className="bg-gray-100 text-gray-700 px-4 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors shrink-0"
+              >
+                Search
+              </button>
             </div>
 
-            <div className="w-full h-[180px] bg-gray-100 rounded-2xl flex items-center justify-center border border-gray-200 overflow-hidden relative">
-              <img src="https://api.maptiler.com/maps/basic-v2/static/-95,38,3/800x400.png?key=YtHwVl08BqQ6uIuG2LhL" alt="Map placeholder" className="w-full h-full object-cover opacity-50 grayscale" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <svg className="w-8 h-8 text-brand-orange mb-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                {location ? <span className="bg-white/90 px-3 py-1 rounded-full text-xs font-bold text-gray-800 shadow-sm border border-gray-100">{location}</span> : <span className="bg-white/90 px-3 py-1 rounded-full text-xs font-bold text-gray-500 shadow-sm border border-gray-100">Location Preview</span>}
-              </div>
+            <div className="w-full h-[250px] bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden relative z-0">
+              <MapContainer center={mapPosition} zoom={13} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Marker position={mapPosition} />
+                <MapClickHandler />
+                <MapCenterUpdater position={mapPosition} />
+              </MapContainer>
             </div>
+            <p className="text-xs text-gray-500 mt-2">You can click anywhere on the map to place a pin, or type an address and click Search.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
