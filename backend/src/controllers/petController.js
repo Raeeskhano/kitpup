@@ -1,5 +1,6 @@
 const Pet = require('../models/Pet');
 const User = require('../models/User');
+const jwt = require('jsonwebtoken');
 
 // @desc    Get all pets
 // @route   GET /api/v1/pets
@@ -9,6 +10,19 @@ exports.getPets = async (req, res, next) => {
     const { species, minFee, maxFee, search, breed, location, sort, status, limit, page } = req.query;
 
     let query = {};
+
+    // Exclude own pets if user is logged in
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      const token = req.headers.authorization.split(' ')[1];
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+          query.owner = { $ne: decoded.id };
+        } catch (err) {
+          // Token invalid or expired, ignore
+        }
+      }
+    }
 
     if (species && species !== 'All') query.species = species;
     if (status) query.status = status;
@@ -37,7 +51,7 @@ exports.getPets = async (req, res, next) => {
     const limitNum = parseInt(limit, 10) || 10;
     const startIndex = (pageNum - 1) * limitNum;
     
-    mongooseQuery = mongooseQuery.skip(startIndex).limit(limitNum);
+    mongooseQuery = mongooseQuery.skip(startIndex).limit(limitNum).populate('owner', 'name contactNumber whatsappNumber');
 
     const pets = await mongooseQuery;
 
@@ -52,7 +66,7 @@ exports.getPets = async (req, res, next) => {
 // @access  Public
 exports.getPet = async (req, res, next) => {
   try {
-    const pet = await Pet.findById(req.params.id);
+    const pet = await Pet.findById(req.params.id).populate('owner', 'name contactNumber whatsappNumber');
     if (!pet) {
       return res.status(404).json({ success: false, error: 'Pet not found' });
     }
@@ -160,7 +174,7 @@ exports.notifyNearby = async (req, res, next) => {
 // @access  Private
 exports.getMyPets = async (req, res, next) => {
   try {
-    const pets = await Pet.find({ owner: req.user.id, status: 'personal' });
+    const pets = await Pet.find({ owner: req.user.id });
     res.status(200).json({ success: true, count: pets.length, data: pets });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });

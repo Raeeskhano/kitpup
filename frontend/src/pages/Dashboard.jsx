@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -49,7 +49,7 @@ const getHomeIcon = () => new L.divIcon({
   iconAnchor: [20, 52]
 });
 
-export default function Dashboard() {
+export default function Dashboard({ setCurrentPage }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -210,7 +210,13 @@ export default function Dashboard() {
       {/* Top Cards Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Card 1: Active Listings */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4">
+        <div 
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 cursor-pointer hover:shadow-md hover:border-orange-200 transition-all"
+          onClick={() => {
+            if (setCurrentPage) setCurrentPage('marketplace');
+            navigate('/marketplace');
+          }}
+        >
           <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
             <svg className="w-6 h-6 text-brand-orange" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2c-5.5 0-10 4.5-10 10s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-2-9.5c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm4 0c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm-2 4.5c-1.7 0-3-1.3-3-3h6c0 1.7-1.3 3-3 3z"/>
@@ -227,7 +233,13 @@ export default function Dashboard() {
         </div>
 
         {/* Card 2: Rescued Nearby */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4">
+        <div 
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 cursor-pointer hover:shadow-md hover:border-orange-200 transition-all"
+          onClick={() => {
+            if (setCurrentPage) setCurrentPage('rescuereport');
+            navigate('/rescue-report');
+          }}
+        >
           <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
             <svg className="w-6 h-6 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
@@ -245,7 +257,13 @@ export default function Dashboard() {
         </div>
 
         {/* Card 3: Lost Pet Alerts */}
-        <div className="bg-red-100 rounded-2xl p-6 shadow-sm border border-red-200 flex items-center gap-4">
+        <div 
+          className="bg-red-100 rounded-2xl p-6 shadow-sm border border-red-200 flex items-center gap-4 cursor-pointer hover:shadow-md hover:border-red-300 transition-all"
+          onClick={() => {
+            if (setCurrentPage) setCurrentPage('lostfound');
+            navigate('/lost-found');
+          }}
+        >
           <div className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0 shadow-sm">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -277,9 +295,10 @@ export default function Dashboard() {
             center={DEFAULT_CENTER} 
             zoom={13} 
             scrollWheelZoom={true} 
-            zoomControl={true}
+            zoomControl={false}
             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}
           >
+            <ZoomControl position="bottomright" />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
@@ -307,8 +326,8 @@ export default function Dashboard() {
           </MapContainer>
 
           {/* Map Header Overlay */}
-          <div className="relative z-10 p-6 pointer-events-none">
-            <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-sm flex items-center justify-between pointer-events-auto max-w-sm">
+          <div className="relative z-10 p-4 md:p-6 pointer-events-none flex justify-start md:justify-start">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 md:p-4 shadow-sm flex items-center justify-between pointer-events-auto w-full max-w-[280px] md:max-w-sm mt-12 md:mt-0 ml-0 md:ml-12">
               <div>
                 <h3 className="font-bold text-gray-800 text-lg">Community Map</h3>
                 <p className="text-xs text-gray-500 font-medium">Showing active alerts and vets nearby.</p>
@@ -342,7 +361,13 @@ export default function Dashboard() {
                 return (
                   <div 
                     key={index} 
-                    onClick={() => navigate(details.route)}
+                    onClick={() => {
+                      if (setCurrentPage) {
+                        const pageRoute = details.route.replace(/[\/\-]/g, '');
+                        setCurrentPage(pageRoute);
+                      }
+                      navigate(details.route);
+                    }}
                     className={`flex items-start gap-4 p-3 rounded-xl cursor-pointer ${details.wrapperClass} border ${details.wrapperClass.includes('border-') ? '' : 'border-transparent'}`}
                   >
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${details.bgClass}`}>
@@ -364,7 +389,10 @@ export default function Dashboard() {
             {/* Static upcoming vet appointment to match prompt item #4 */}
             {!loading && (
               <div 
-                onClick={() => navigate('/vetlocator')}
+                onClick={() => {
+                  if (setCurrentPage) setCurrentPage('vetlocator');
+                  navigate('/vetlocator');
+                }}
                 className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent"
               >
                 <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 border border-gray-200 mt-1">

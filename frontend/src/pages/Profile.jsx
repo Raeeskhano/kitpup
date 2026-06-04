@@ -28,7 +28,8 @@ export default function Profile() {
     gender: 'Male',
     weight: '',
     vaccinationStatus: false,
-    description: ''
+    description: '',
+    location: ''
   });
 
   const getToken = () => {
@@ -112,7 +113,7 @@ export default function Profile() {
 
   // Pet Actions
   const openAddPet = () => {
-    setPetForm({ name: '', species: 'Dog', breed: '', age: '', gender: 'Male', weight: '', vaccinationStatus: false, description: '' });
+    setPetForm({ name: '', species: 'Dog', breed: '', age: '', gender: 'Male', weight: '', vaccinationStatus: false, description: '', location: '' });
     setSelectedPet(null);
     setError('');
     setActiveModal('pet');
@@ -127,7 +128,8 @@ export default function Profile() {
       gender: pet.gender || 'Male',
       weight: pet.weight || '',
       vaccinationStatus: pet.vaccinationStatus || false,
-      description: pet.description || ''
+      description: pet.description || '',
+      location: pet.location || ''
     });
     setSelectedPet(pet);
     setError('');
@@ -146,7 +148,7 @@ export default function Profile() {
       const config = { headers: { Authorization: `Bearer ${getToken()}` } };
       
       // we need to set description to a default if empty to satisfy the Pet schema
-      const payload = { ...petForm, description: petForm.description || 'My personal pet.', location: 'Home' };
+      const payload = { ...petForm, description: petForm.description || 'My personal pet.', location: petForm.location || 'Home' };
 
       if (selectedPet) {
         // Update
@@ -265,25 +267,24 @@ export default function Profile() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
             {pets.map(pet => (
               <div 
                 key={pet._id} 
                 onClick={() => openEditPet(pet)}
-                className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center cursor-pointer hover:border-brand-orange/30 transition-colors"
+                className="bg-white rounded-xl p-2.5 shadow-sm border border-gray-100 flex items-center cursor-pointer hover:border-brand-orange/30 transition-colors group"
               >
-                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-200 mr-4">
+                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-200 mr-2.5 group-hover:border-brand-orange/30 transition-colors">
                    {pet.photos && pet.photos.length > 0 ? (
-                     <img src={pet.photos[0]} alt={pet.name} className="w-full h-full object-cover" />
+                     <img src={pet.photos[0].startsWith('/') ? `http://localhost:5000${pet.photos[0]}` : pet.photos[0]} alt={pet.name} className="w-full h-full object-cover" />
                    ) : (
-                     <span className="font-bold text-gray-400">{pet.name.charAt(0)}</span>
+                     <span className="text-xs font-bold text-gray-400 uppercase">{pet.name.charAt(0)}</span>
                    )}
                 </div>
-                <div className="flex-1">
-                  <p className="font-bold text-gray-800 truncate leading-tight">{pet.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5 truncate">{pet.breed} • {pet.age || '?'}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-800 truncate leading-tight group-hover:text-brand-orange transition-colors">{pet.name}</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5 truncate">{pet.breed}</p>
                 </div>
-                <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
               </div>
             ))}
           </div>

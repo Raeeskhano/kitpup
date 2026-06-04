@@ -6,7 +6,7 @@ export default function Marketplace() {
   const [search, setSearch] = useState('');
   const [breed, setBreed] = useState('Any Breed');
   const [location, setLocation] = useState('');
-  const [feeRange, setFeeRange] = useState({ min: 0, max: 500 });
+  const [feeRange, setFeeRange] = useState({ min: 0, max: 200000 });
   const [sort, setSort] = useState('newest');
 
   const [pets, setPets] = useState([]);
@@ -18,10 +18,13 @@ export default function Marketplace() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [postForm, setPostForm] = useState({
-    name: '', species: 'Dog', breed: '', age: '', gender: 'Male', location: '', fee: 0, description: ''
+    name: '', species: 'Dog', breed: '', age: '', gender: 'Male', location: '', fee: 0, description: '', contactNumber: '', whatsappNumber: ''
   });
   const [postPhotos, setPostPhotos] = useState(null);
   const [postStatus, setPostStatus] = useState('');
+
+  const [selectedPet, setSelectedPet] = useState(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   const fetchPets = async () => {
     try {
@@ -88,9 +91,17 @@ export default function Marketplace() {
         token = user.token || '';
       }
 
+      // Update user contact info
+      await axios.patch('http://localhost:5000/api/v1/users/me', 
+        { contactNumber: postForm.contactNumber, whatsappNumber: postForm.whatsappNumber },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
       const formData = new FormData();
       Object.keys(postForm).forEach(key => {
-        formData.append(key, postForm[key]);
+        if (key !== 'contactNumber' && key !== 'whatsappNumber') {
+          formData.append(key, postForm[key]);
+        }
       });
       
       if (postPhotos) {
@@ -110,7 +121,7 @@ export default function Marketplace() {
       setTimeout(() => {
         setIsModalOpen(false);
         setPostStatus('');
-        setPostForm({ name: '', species: 'Dog', breed: '', age: '', gender: 'Male', location: '', fee: 0, description: '' });
+        setPostForm({ name: '', species: 'Dog', breed: '', age: '', gender: 'Male', location: '', fee: 0, description: '', contactNumber: '', whatsappNumber: '' });
         setPostPhotos(null);
         fetchPets();
       }, 2000);
@@ -120,12 +131,32 @@ export default function Marketplace() {
     }
   };
 
+  const handleOpenPostModal = async () => {
+    try {
+      const storedUser = localStorage.getItem('kitpup_user');
+      let token = storedUser ? JSON.parse(storedUser).token : '';
+      const res = await axios.get('http://localhost:5000/api/v1/users/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const userData = res.data.data;
+      setPostForm(prev => ({
+        ...prev,
+        contactNumber: userData.contactNumber || '',
+        whatsappNumber: userData.whatsappNumber || ''
+      }));
+      setIsModalOpen(true);
+    } catch (err) {
+      console.error(err);
+      alert("Please login first.");
+    }
+  };
+
   const handleReset = () => {
     setSpecies('Dog');
     setSearch('');
     setBreed('Any Breed');
     setLocation('');
-    setFeeRange({ min: 0, max: 500 });
+    setFeeRange({ min: 0, max: 200000 });
   };
 
   const handleFeeChange = (e) => {
@@ -213,13 +244,13 @@ export default function Marketplace() {
           <div>
             <div className="flex justify-between items-center mb-4">
               <label className="block text-sm font-bold text-gray-800">Adoption Fee</label>
-              <span className="text-sm font-bold text-[#92400E]">${feeRange.min} - ${feeRange.max}</span>
+              <span className="text-sm font-bold text-[#92400E]">PKR {feeRange.min} - PKR {feeRange.max}</span>
             </div>
             <div className="relative h-1 bg-orange-100 rounded-full mt-4 mb-2">
               <input 
                 type="range" 
                 min="0" 
-                max="500" 
+                max="200000" 
                 value={feeRange.max} 
                 onChange={handleFeeChange}
                 className="w-full absolute -top-2 appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#92400E] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-sm" 
@@ -254,7 +285,7 @@ export default function Marketplace() {
                 <option value="Lowest Fee">Lowest Fee</option>
               </select>
             </div>
-            <button onClick={() => setIsModalOpen(true)} className="bg-brand-orange text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-shadow whitespace-nowrap">
+            <button onClick={handleOpenPostModal} className="bg-brand-orange text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-shadow whitespace-nowrap">
               + Post Item
             </button>
           </div>
@@ -317,33 +348,19 @@ export default function Marketplace() {
 
                 {/* Content */}
                 <div className="p-5 flex-1 flex flex-col">
-                  <div className="flex justify-between items-end mb-1">
-                    <h3 className="text-2xl font-bold text-gray-800 truncate" title={pet.name}>{pet.name}</h3>
-                    <span className="text-xl font-bold text-[#92400E] ml-2 whitespace-nowrap">{pet.fee === 0 ? 'Free' : `$${pet.fee}`}</span>
+                  <div className="flex justify-between items-start mb-2 gap-2">
+                    <h3 className="text-lg font-bold text-gray-800 break-words leading-tight">{pet.name}</h3>
+                    <span className="text-base font-bold text-[#92400E] whitespace-nowrap shrink-0">{pet.fee === 0 ? 'Free' : `PKR ${pet.fee}`}</span>
                   </div>
-                  <p className="text-sm text-gray-500 mb-4 h-10 line-clamp-2">{pet.breed}</p>
+                  <p className="text-xs text-gray-500 mb-4 leading-relaxed break-words">{pet.breed}</p>
                   
-                  {/* Chips */}
-                  <div className="flex gap-2 mb-4">
-                    <div className="bg-orange-50 text-gray-700 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1">
-                      <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                      {pet.age}
-                    </div>
-                    <div className="bg-orange-50 text-gray-700 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1">
-                      {pet.gender === 'Female' ? (
-                        <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 2a5 5 0 100 10 5 5 0 000-10zm0 10v9m-3-4h6"/></svg>
-                      ) : (
-                        <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10 14a5 5 0 100-10 5 5 0 000 10zm0 0l6 6m-4 0h4v-4"/></svg>
-                      )}
-                      {pet.gender}
-                    </div>
-                  </div>
-
-                  <div className="mt-auto pt-4 border-t border-gray-100">
-                    <p className="text-xs text-gray-500 flex flex-col sm:flex-row sm:items-center gap-1">
-                      <svg className="w-4 h-4 text-gray-400 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                      {pet.location}
-                    </p>
+                  <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-3">
+                    <button 
+                      onClick={() => { setSelectedPet(pet); setIsDetailsModalOpen(true); }}
+                      className="w-full bg-orange-50 text-brand-orange py-2 rounded-xl text-xs font-bold hover:bg-brand-orange hover:text-white transition-colors"
+                    >
+                      View Details
+                    </button>
                   </div>
                 </div>
 
@@ -417,7 +434,7 @@ export default function Marketplace() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Adoption Fee ($)</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Adoption Fee (PKR)</label>
                     <input type="number" min="0" required value={postForm.fee} onChange={e => setPostForm({...postForm, fee: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-brand-orange focus:border-brand-orange" />
                   </div>
                 </div>
@@ -432,6 +449,17 @@ export default function Marketplace() {
                   <textarea rows="3" required value={postForm.description} onChange={e => setPostForm({...postForm, description: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-brand-orange focus:border-brand-orange"></textarea>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Your Phone Number</label>
+                    <input type="text" required placeholder="+1234567890" value={postForm.contactNumber} onChange={e => setPostForm({...postForm, contactNumber: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-brand-orange focus:border-brand-orange" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Your WhatsApp Number (Optional)</label>
+                    <input type="text" placeholder="+1234567890" value={postForm.whatsappNumber} onChange={e => setPostForm({...postForm, whatsappNumber: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-brand-orange focus:border-brand-orange" />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Upload Photos</label>
                   <input type="file" multiple accept="image/*" onChange={e => setPostPhotos(e.target.files)} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-brand-orange hover:file:bg-orange-100" />
@@ -444,6 +472,76 @@ export default function Marketplace() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pet Details Modal */}
+      {isDetailsModalOpen && selectedPet && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl relative">
+            <button onClick={() => { setIsDetailsModalOpen(false); setSelectedPet(null); }} className="absolute top-4 right-4 bg-white/50 backdrop-blur-sm rounded-full p-1 text-gray-500 hover:text-gray-800 transition-colors z-10">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            
+            <div className="w-full h-64 bg-gray-100 relative">
+              {selectedPet.photos && selectedPet.photos.length > 0 ? (
+                <img src={selectedPet.photos[0].startsWith('/') ? `http://localhost:5000${selectedPet.photos[0]}` : selectedPet.photos[0]} alt={selectedPet.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+              )}
+            </div>
+            
+            <div className="p-6 md:p-8">
+              <div className="flex justify-between items-start mb-2 gap-4">
+                <h2 className="text-2xl font-bold text-gray-800 break-words">{selectedPet.name}</h2>
+                <span className="text-xl font-bold text-[#92400E] shrink-0">{selectedPet.fee === 0 ? 'Free' : `PKR ${selectedPet.fee}`}</span>
+              </div>
+              
+              <div className="flex flex-wrap gap-2 mb-6">
+                <span className="bg-orange-50 text-brand-orange px-3 py-1 rounded-full text-xs font-bold">{selectedPet.species}</span>
+                <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-medium">{selectedPet.breed}</span>
+                <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-medium">{selectedPet.age}</span>
+                <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-medium">{selectedPet.gender}</span>
+              </div>
+              
+              <div className="mb-6">
+                <h3 className="text-sm font-bold text-gray-800 mb-2">Description</h3>
+                <p className="text-gray-600 text-sm whitespace-pre-wrap leading-relaxed">{selectedPet.description || 'No description provided.'}</p>
+              </div>
+              
+              <div className="mb-8">
+                <h3 className="text-sm font-bold text-gray-800 mb-2">Location</h3>
+                <p className="text-gray-600 text-sm flex items-center gap-1.5">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                  {selectedPet.location}
+                </p>
+              </div>
+              
+              <div className="flex gap-4 flex-col">
+                <h3 className="text-sm font-bold text-gray-800">Contact Seller ({selectedPet.owner?.name || 'Unknown'})</h3>
+                <div className="flex flex-wrap gap-3">
+                  {selectedPet.owner?.contactNumber ? (
+                    <a href={`tel:${selectedPet.owner.contactNumber}`} className="flex-1 min-w-[140px] bg-gray-100 text-gray-800 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors shadow-sm flex items-center justify-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                      Call Seller
+                    </a>
+                  ) : (
+                    <button disabled className="flex-1 min-w-[140px] bg-gray-100 text-gray-400 py-3 rounded-xl font-bold flex items-center justify-center gap-2 cursor-not-allowed">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                      No Phone
+                    </button>
+                  )}
+
+                  {selectedPet.owner?.whatsappNumber ? (
+                    <a href={`https://wa.me/${selectedPet.owner.whatsappNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-[140px] bg-[#25D366] text-white py-3 rounded-xl font-bold hover:bg-[#128C7E] transition-colors shadow-sm flex items-center justify-center gap-2">
+                      <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                      WhatsApp
+                    </a>
+                  ) : null}
+                </div>
+              </div>
             </div>
           </div>
         </div>

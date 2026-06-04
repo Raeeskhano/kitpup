@@ -147,9 +147,9 @@ export default function PetShop() {
                 </h3>
                 
                 <div className="flex items-baseline gap-2 mb-4">
-                  <span className="text-lg font-bold text-[#92400E]">${product.price}</span>
+                  <span className="text-lg font-bold text-[#92400E]">PKR {product.price}</span>
                   {product.originalPrice && (
-                    <span className="text-xs text-gray-400 line-through">${product.originalPrice}</span>
+                    <span className="text-xs text-gray-400 line-through">PKR {product.originalPrice}</span>
                   )}
                 </div>
 

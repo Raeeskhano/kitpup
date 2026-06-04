@@ -52,7 +52,7 @@ function App() {
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'dashboard': return <Dashboard />;
+      case 'dashboard': return <Dashboard setCurrentPage={setCurrentPage} />;
       case 'marketplace': return <Marketplace />;
       case 'petshop': return <PetShop />;
       case 'rescuereport': return <RescueReport />;

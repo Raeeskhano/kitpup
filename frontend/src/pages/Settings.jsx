@@ -29,6 +29,7 @@ export default function Settings({ onLogout }) {
   const [emailInput, setEmailInput] = useState('');
   const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
   const [measureSystem, setMeasureSystem] = useState('Imperial');
+  const [contactInputs, setContactInputs] = useState({ contactNumber: '', whatsappNumber: '' });
   
   // Toast/Error state
   const [error, setError] = useState('');
@@ -50,6 +51,10 @@ export default function Settings({ onLogout }) {
       setUser(res.data.data);
       setMeasureSystem(res.data.data.preferences?.measurementSystem || 'Imperial');
       setEmailInput(res.data.data.email);
+      setContactInputs({
+        contactNumber: res.data.data.contactNumber || '',
+        whatsappNumber: res.data.data.whatsappNumber || ''
+      });
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -150,6 +155,24 @@ export default function Settings({ onLogout }) {
     setIsSaving(false);
   };
 
+  // Contact Submit
+  const handleContactSave = async () => {
+    setError('');
+    setIsSaving(true);
+    try {
+      const res = await axios.patch('http://localhost:5000/api/v1/users/me', 
+        { contactNumber: contactInputs.contactNumber, whatsappNumber: contactInputs.whatsappNumber },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      setUser(res.data.data);
+      setActiveModal(null);
+      showToast('Contact info saved!');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update contact info');
+    }
+    setIsSaving(false);
+  };
+
   const handleLocationServices = () => {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -195,6 +218,24 @@ export default function Settings({ onLogout }) {
               <div>
                 <p className="font-bold text-gray-800 text-sm">Password</p>
                 <p className="text-sm text-gray-500 tracking-widest">••••••••</p>
+              </div>
+              <svg className="w-5 h-5 text-gray-400 group-hover:text-[#f4a261] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Info Section */}
+        <div className="p-6">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Contact Information</h3>
+          <div className="space-y-5">
+            <div className="flex items-center justify-between cursor-pointer group" onClick={() => setActiveModal('contact')}>
+              <div>
+                <p className="font-bold text-gray-800 text-sm">Phone & WhatsApp</p>
+                <p className="text-sm text-gray-500">
+                  {user?.contactNumber || user?.whatsappNumber 
+                    ? [user?.contactNumber, user?.whatsappNumber].filter(Boolean).join(', ') 
+                    : 'Not set (Required to post a listing)'}
+                </p>
               </div>
               <svg className="w-5 h-5 text-gray-400 group-hover:text-[#f4a261] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
             </div>
@@ -378,6 +419,39 @@ export default function Settings({ onLogout }) {
             className="w-full bg-[#f4a261] hover:bg-[#e76f51] text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50 mt-4"
           >
             {isSaving ? 'Saving...' : 'Save Preferences'}
+          </button>
+        </div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'contact'} onClose={() => {setActiveModal(null); setError('');}} title="Contact Information">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Phone Number (Required for posting)</label>
+            <input 
+              type="text" 
+              placeholder="+1234567890"
+              value={contactInputs.contactNumber} 
+              onChange={(e) => setContactInputs({...contactInputs, contactNumber: e.target.value})}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#f4a261] focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">WhatsApp Number (Optional)</label>
+            <input 
+              type="text" 
+              placeholder="+1234567890"
+              value={contactInputs.whatsappNumber} 
+              onChange={(e) => setContactInputs({...contactInputs, whatsappNumber: e.target.value})}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#f4a261] focus:border-transparent"
+            />
+          </div>
+          {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
+          <button 
+            onClick={handleContactSave}
+            disabled={isSaving}
+            className="w-full bg-[#f4a261] hover:bg-[#e76f51] text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50 mt-2"
+          >
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </Modal>

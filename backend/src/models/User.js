@@ -28,6 +28,9 @@ const userSchema = new mongoose.Schema({
   contactNumber: {
     type: String
   },
+  whatsappNumber: {
+    type: String
+  },
   address: {
     type: String
   },

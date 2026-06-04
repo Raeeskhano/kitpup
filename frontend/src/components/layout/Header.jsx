@@ -236,7 +236,7 @@ export default function Header({ currentPage, user, onLogout, setCurrentPage }) 
                     <div className="flex-1 flex flex-col justify-between">
                       <div>
                         <h4 className="font-bold text-gray-800 line-clamp-2">{item.productId?.name}</h4>
-                        <p className="text-[#92400E] font-bold mt-1">${item.productId?.price}</p>
+                        <p className="text-[#92400E] font-bold mt-1">PKR {item.productId?.price}</p>
                       </div>
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center border border-gray-200 rounded-lg">
@@ -256,7 +256,7 @@ export default function Header({ currentPage, user, onLogout, setCurrentPage }) 
               <div className="p-6 border-t border-gray-100 bg-gray-50">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-gray-600 font-medium">Subtotal</span>
-                  <span className="text-2xl font-bold text-gray-800">${cartSubtotal.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-gray-800">PKR {cartSubtotal.toFixed(2)}</span>
                 </div>
                 <button 
                   onClick={handleCheckout}
