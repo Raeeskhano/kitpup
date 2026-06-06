@@ -49,7 +49,7 @@ exports.createReport = async (req, res, next) => {
     reportData.reporter = req.user.id;
     
     if (req.files && req.files.length > 0) {
-      reportData.photos = req.files.map(file => `/uploads/${file.filename}`);
+      reportData.photos = req.files.map(file => file.path);
     }
     
     const report = await Report.create(reportData);

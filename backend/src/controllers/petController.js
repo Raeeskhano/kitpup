@@ -86,7 +86,7 @@ exports.createPet = async (req, res, next) => {
     req.body.owner = req.user.id;
 
     if (req.files && req.files.length > 0) {
-      req.body.photos = req.files.map(file => `/uploads/${file.filename}`);
+      req.body.photos = req.files.map(file => file.path);
     } else {
       req.body.photos = ['https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=400&h=500'];
     }
@@ -202,7 +202,7 @@ exports.createMyPet = async (req, res, next) => {
 
     // Handle uploaded photos
     if (req.files && req.files.length > 0) {
-      req.body.photos = req.files.map(f => `http://localhost:5000/uploads/${f.filename}`);
+      req.body.photos = req.files.map(f => f.path);
     }
 
     const pet = await Pet.create(req.body);
@@ -230,7 +230,7 @@ exports.updateMyPet = async (req, res, next) => {
     }
 
     if (req.files && req.files.length > 0) {
-      req.body.photos = req.files.map(f => `http://localhost:5000/uploads/${f.filename}`);
+      req.body.photos = req.files.map(f => f.path);
     }
 
     pet = await Pet.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });

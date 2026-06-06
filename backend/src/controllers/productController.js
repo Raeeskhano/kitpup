@@ -42,7 +42,7 @@ exports.createProduct = async (req, res, next) => {
     const productData = { ...req.body };
     productData.owner = req.user.id;
     if (req.files && req.files.length > 0) {
-      productData.photos = req.files.map(file => `/uploads/${file.filename}`);
+      productData.photos = req.files.map(file => file.path);
     }
     const product = await Product.create(productData);
     res.status(201).json({ success: true, data: product });
@@ -219,7 +219,7 @@ exports.updateMyProduct = async (req, res, next) => {
 
     const productData = { ...req.body };
     if (req.files && req.files.length > 0) {
-      productData.photos = req.files.map(file => `/uploads/${file.filename}`);
+      productData.photos = req.files.map(file => file.path);
     }
 
     product = await Product.findByIdAndUpdate(req.params.id, productData, { new: true, runValidators: true });
