@@ -237,7 +237,9 @@ export default function Sidebar({ currentPage, setCurrentPage, user }) {
             <p className="text-sm font-bold text-gray-800 truncate">
               {user?.name || "User"}
             </p>
-            <p className="text-xs text-gray-500 truncate">Premium Plan</p>
+            {user?.role === 'admin' && (
+              <p className="text-xs text-brand-orange font-bold truncate">Admin</p>
+            )}
           </div>
         </div>
       </div>

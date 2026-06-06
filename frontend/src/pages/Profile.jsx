@@ -324,9 +324,11 @@ export default function Profile() {
           <div>
             <h1 className="text-2xl font-bold text-gray-800">{user?.name}</h1>
             <p className="text-sm text-gray-500">{user?.email}</p>
-            <div className="inline-block mt-2 px-3 py-1 bg-brand-orange text-white text-xs font-bold rounded-full shadow-sm">
-              {user?.role === 'admin' ? 'Admin' : 'Premium Member'}
-            </div>
+            {user?.role === 'admin' && (
+              <div className="inline-block mt-2 px-3 py-1 bg-brand-orange text-white text-xs font-bold rounded-full shadow-sm">
+                Admin
+              </div>
+            )}
           </div>
         </div>
         
@@ -501,12 +503,6 @@ export default function Profile() {
                 <div>
                   <label className="block text-xs font-bold text-gray-600 mb-1">EMAIL ADDRESS</label>
                   <input type="email" value={user?.email} disabled className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">PLAN</label>
-                  <div className="px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-medium">
-                    {user?.role === 'admin' ? 'Admin' : 'Premium Member'}
-                  </div>
                 </div>
                 <button onClick={handleSaveProfile} className="w-full mt-4 bg-brand-orange text-white font-bold py-3 rounded-lg hover:bg-brand-dark-brown transition-colors">
                   Save Changes

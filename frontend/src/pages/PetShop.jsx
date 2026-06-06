@@ -15,6 +15,9 @@ export default function PetShop() {
   const [postPhotos, setPostPhotos] = useState(null);
   const [postStatus, setPostStatus] = useState('');
 
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [detailProduct, setDetailProduct] = useState(null);
+
   const categories = ['All', 'Food & Treats', 'Apparel', 'Toys', 'Grooming', 'Beds & Crates'];
 
   const fetchProducts = async () => {
@@ -180,7 +183,11 @@ export default function PetShop() {
           </div>
         ) : (
           products.map(product => (
-            <div key={product._id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow group flex flex-col">
+            <div 
+              key={product._id} 
+              onClick={() => { setDetailProduct(product); setIsDetailModalOpen(true); }}
+              className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow group flex flex-col cursor-pointer"
+            >
               
               <div className="relative h-40 bg-gray-50 overflow-hidden">
                 {product.photos && product.photos.length > 0 ? (
@@ -203,7 +210,7 @@ export default function PetShop() {
                     </span>
                   ) : <div></div>}
                   
-                  <button className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-red-500 transition-colors">
+                  <button onClick={e => e.stopPropagation()} className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-red-500 transition-colors">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                   </button>
                 </div>
@@ -229,14 +236,14 @@ export default function PetShop() {
                 <div className="mt-auto pt-2 border-t border-gray-50">
                   {product.stock > 0 ? (
                     <button 
-                      onClick={() => handleAddToCart(product._id)}
+                      onClick={(e) => { e.stopPropagation(); handleAddToCart(product._id); }}
                       disabled={addingToCartId === product._id}
                       className="w-full py-2.5 bg-[#92400E] text-white rounded-xl text-sm font-bold shadow-sm hover:bg-[#78350f] transition-colors disabled:opacity-75"
                     >
                       {addingToCartId === product._id ? 'Adding...' : 'Add to Cart'}
                     </button>
                   ) : (
-                    <button disabled className="w-full py-2.5 bg-gray-100 text-gray-400 border border-gray-200 rounded-xl text-sm font-bold">
+                    <button onClick={e => e.stopPropagation()} disabled className="w-full py-2.5 bg-gray-100 text-gray-400 border border-gray-200 rounded-xl text-sm font-bold">
                       Out of Stock
                     </button>
                   )}
@@ -328,6 +335,96 @@ export default function PetShop() {
           </div>
         </div>
       )}
+
+      {/* Product Detail Modal */}
+      {isDetailModalOpen && detailProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-gray-900/60 backdrop-blur-sm overflow-y-auto" onClick={() => { setIsDetailModalOpen(false); setDetailProduct(null); }}>
+          <div className="bg-white rounded-3xl w-full max-w-5xl shadow-xl relative my-auto flex flex-col md:flex-row overflow-hidden" onClick={e => e.stopPropagation()}>
+            
+            <button 
+              onClick={() => { setIsDetailModalOpen(false); setDetailProduct(null); }}
+              className="absolute top-4 right-4 z-10 text-gray-800 bg-white/80 hover:bg-white p-2.5 rounded-full backdrop-blur-sm transition-colors shadow-sm md:hidden"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            {/* Left: Image Area */}
+            <div className="relative h-[300px] md:h-auto md:w-1/2 bg-gray-50 flex-shrink-0 md:min-h-[500px]">
+              <img 
+                src={detailProduct.photos && detailProduct.photos.length > 0 ? (detailProduct.photos[0].startsWith('/') ? `http://localhost:5000${detailProduct.photos[0]}` : detailProduct.photos[0]) : ''} 
+                alt={detailProduct.name} 
+                className="absolute inset-0 w-full h-full object-cover" 
+              />
+              {detailProduct.badge && (
+                <div className={`absolute top-4 left-4 text-white px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider shadow-md ${detailProduct.badge.toLowerCase() === 'sale' ? 'bg-red-500' : 'bg-yellow-500'}`}>
+                  {detailProduct.badge}
+                </div>
+              )}
+            </div>
+
+            {/* Right: Content Area */}
+            <div className="p-6 md:p-10 md:w-1/2 flex flex-col max-h-[85vh] md:max-h-[90vh] overflow-y-auto bg-white">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <div className="text-[#92400E] font-bold text-sm tracking-widest uppercase mb-2">{detailProduct.category}</div>
+                  <h2 className="text-3xl md:text-4xl font-black text-gray-800 mb-4 leading-tight">{detailProduct.name}</h2>
+                  
+                  <div className="flex items-center gap-2 mb-6">
+                    {renderStars(detailProduct.rating || 0)}
+                    <span className="text-sm text-gray-500 font-medium">{detailProduct.reviewCount || 0} Reviews</span>
+                  </div>
+
+                  <div className="flex items-baseline gap-3 mb-6">
+                    <span className="text-3xl font-black text-gray-800">PKR {detailProduct.price}</span>
+                    {detailProduct.originalPrice && (
+                      <span className="text-lg text-gray-400 line-through font-medium">PKR {detailProduct.originalPrice}</span>
+                    )}
+                  </div>
+                </div>
+                
+                <button 
+                  onClick={() => { setIsDetailModalOpen(false); setDetailProduct(null); }}
+                  className="hidden md:flex text-gray-400 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 p-3 rounded-full transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+
+              <div className="mb-8 flex-1">
+                <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                  Product Details
+                </h3>
+                <p className="text-gray-600 leading-relaxed bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                  {detailProduct.description || 'No detailed description available.'}
+                </p>
+                <div className="mt-4 flex items-center gap-2 text-sm font-medium text-gray-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                  {detailProduct.stock > 0 ? `${detailProduct.stock} in stock` : <span className="text-red-500">Out of Stock</span>}
+                </div>
+              </div>
+              
+              <div className="pt-6 border-t border-gray-100 mt-auto flex gap-4">
+                {detailProduct.stock > 0 ? (
+                  <button 
+                    onClick={() => handleAddToCart(detailProduct._id)}
+                    disabled={addingToCartId === detailProduct._id}
+                    className="flex-1 py-4 bg-[#92400E] text-white rounded-xl font-bold shadow-sm hover:bg-[#78350f] transition-colors disabled:opacity-75 flex justify-center items-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    {addingToCartId === detailProduct._id ? 'Adding to Cart...' : 'Add to Cart'}
+                  </button>
+                ) : (
+                  <button disabled className="flex-1 py-4 bg-gray-100 text-gray-400 border border-gray-200 rounded-xl font-bold">
+                    Out of Stock
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

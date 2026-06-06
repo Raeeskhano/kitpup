@@ -12,7 +12,8 @@ const {
   getMyPets,
   createMyPet,
   updateMyPet,
-  deleteMyPet
+  deleteMyPet,
+  contactOwner
 } = require('../controllers/petController');
 
 const { requireAuth } = require('../middlewares/auth');
@@ -58,5 +59,9 @@ router
 router
   .route('/:id/notify')
   .post(requireAuth, notifyNearby);
+
+router
+  .route('/:id/contact')
+  .post(requireAuth, contactOwner);
 
 module.exports = router;

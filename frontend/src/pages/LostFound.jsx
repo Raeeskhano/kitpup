@@ -44,6 +44,10 @@ export default function LostFound() {
   });
   const [photoFile, setPhotoFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [selectedPet, setSelectedPet] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [detailPet, setDetailPet] = useState(null);
 
   const getToken = () => {
     const stored = localStorage.getItem('kitpup_user');
@@ -123,6 +127,18 @@ export default function LostFound() {
     }
   };
 
+  const handleMarkFound = async (id) => {
+    try {
+      await axios.patch(`http://localhost:5000/api/v1/pets/${id}`, { status: 'found' }, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      setToastMsg('Pet marked as found! 🐾');
+      setPets(prev => prev.filter(p => p._id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleMarkReunited = async (id) => {
     try {
       await axios.patch(`http://localhost:5000/api/v1/pets/${id}`, { status: 'reunited' }, {
@@ -134,6 +150,13 @@ export default function LostFound() {
       console.error(err);
     }
   };
+
+
+  const getCurrentUserId = () => {
+    const stored = localStorage.getItem('kitpup_user');
+    return stored ? JSON.parse(stored).id : null;
+  };
+  const currentUserId = getCurrentUserId();
 
   return (
     <div className="space-y-8 max-w-[1100px] mx-auto text-left relative min-h-screen pb-10">
@@ -212,7 +235,11 @@ export default function LostFound() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pets.map(pet => (
-              <div key={pet._id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex flex-col group hover:shadow-md transition-shadow">
+              <div 
+                key={pet._id} 
+                onClick={() => { setDetailPet(pet); setIsDetailModalOpen(true); }}
+                className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex flex-col group hover:shadow-md transition-shadow cursor-pointer"
+              >
                 
                 {/* Image Area */}
                 <div className="relative h-[200px] w-full rounded-2xl overflow-hidden mb-4 bg-gray-100 flex-shrink-0">
@@ -249,21 +276,42 @@ export default function LostFound() {
 
                   {/* Action Button */}
                   {activeTab === 'lost' ? (
-                    <button 
-                      onClick={() => handleNotifyNearby(pet._id)}
-                      className="w-full mt-auto bg-white border-2 border-[#f97316] text-[#f97316] hover:bg-orange-50 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                      Notify Nearby
-                    </button>
+                    <div className="w-full mt-auto flex gap-2">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleNotifyNearby(pet._id); }}
+                        className="flex-1 bg-white border-2 border-[#f97316] text-[#f97316] hover:bg-orange-50 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        Notify
+                      </button>
+                      {(pet.owner && pet.owner._id === currentUserId) ? (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleMarkFound(pet._id); }}
+                          className="flex-1 bg-white border-2 border-green-600 text-green-600 hover:bg-green-50 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-1"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                          Found
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setSelectedPet(pet); setIsContactModalOpen(true); }}
+                          className="flex-1 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-1"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                          Contact
+                        </button>
+                      )}
+                    </div>
                   ) : (
-                    <button 
-                      onClick={() => handleMarkReunited(pet._id)}
-                      className="w-full mt-auto bg-white border-2 border-green-600 text-green-600 hover:bg-green-50 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                      Mark as Reunited
-                    </button>
+                    (pet.owner && pet.owner._id === currentUserId) && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleMarkReunited(pet._id); }}
+                        className="w-full mt-auto bg-white border-2 border-green-600 text-green-600 hover:bg-green-50 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                        Mark as Reunited
+                      </button>
+                    )
                   )}
                 </div>
               </div>
@@ -354,6 +402,186 @@ export default function LostFound() {
                 {isSubmitting ? 'Posting Alert...' : 'Post Lost Pet Alert'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Contact Modal */}
+      {isContactModalOpen && selectedPet && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-xl relative my-8">
+            <button 
+              onClick={() => { setIsContactModalOpen(false); setSelectedPet(null); }}
+              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 bg-gray-50 p-2 rounded-full"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <span className="text-blue-600">📞</span> Contact Owner
+              </h2>
+              <p className="text-sm text-gray-500 mt-1 font-medium">Reach out directly to the person who listed {selectedPet.name}.</p>
+            </div>
+
+            <div className="space-y-4">
+              {selectedPet.owner?.name && (
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                    {selectedPet.owner.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">Name</div>
+                    <div className="text-gray-800 font-bold">{selectedPet.owner.name}</div>
+                  </div>
+                </div>
+              )}
+              
+              {selectedPet.owner?.email && (
+                <a href={`mailto:${selectedPet.owner.email}`} className="block p-4 bg-gray-50 hover:bg-blue-50 transition-colors rounded-xl border border-gray-100 flex items-center gap-4 group">
+                  <div className="w-10 h-10 rounded-full bg-white border border-gray-200 group-hover:border-blue-200 flex items-center justify-center text-gray-500 group-hover:text-blue-600">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">Email</div>
+                    <div className="text-gray-800 font-bold">{selectedPet.owner.email}</div>
+                  </div>
+                </a>
+              )}
+
+              {selectedPet.owner?.contactNumber && (
+                <a href={`tel:${selectedPet.owner.contactNumber}`} className="block p-4 bg-gray-50 hover:bg-green-50 transition-colors rounded-xl border border-gray-100 flex items-center gap-4 group">
+                  <div className="w-10 h-10 rounded-full bg-white border border-gray-200 group-hover:border-green-200 flex items-center justify-center text-gray-500 group-hover:text-green-600">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">Phone</div>
+                    <div className="text-gray-800 font-bold">{selectedPet.owner.contactNumber}</div>
+                  </div>
+                </a>
+              )}
+
+              {selectedPet.owner?.whatsappNumber && (
+                <a href={`https://wa.me/${selectedPet.owner.whatsappNumber.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="block p-4 bg-gray-50 hover:bg-green-50 transition-colors rounded-xl border border-gray-100 flex items-center gap-4 group">
+                  <div className="w-10 h-10 rounded-full bg-white border border-gray-200 group-hover:border-green-200 flex items-center justify-center text-gray-500 group-hover:text-green-600">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">WhatsApp</div>
+                    <div className="text-gray-800 font-bold">{selectedPet.owner.whatsappNumber}</div>
+                  </div>
+                </a>
+              )}
+
+              {(!selectedPet.owner?.email && !selectedPet.owner?.contactNumber && !selectedPet.owner?.whatsappNumber) && (
+                <div className="p-4 bg-orange-50 text-orange-800 rounded-xl font-medium text-sm text-center">
+                  This user hasn't provided any contact information.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pet Detail Modal */}
+      {isDetailModalOpen && detailPet && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-gray-900/60 backdrop-blur-sm overflow-y-auto" onClick={() => { setIsDetailModalOpen(false); setDetailPet(null); }}>
+          <div className="bg-white rounded-3xl w-full max-w-5xl shadow-xl relative my-auto flex flex-col md:flex-row overflow-hidden" onClick={e => e.stopPropagation()}>
+            
+            {/* Close Button (Absolute on Mobile, inside content on Desktop) */}
+            <button 
+              onClick={() => { setIsDetailModalOpen(false); setDetailPet(null); }}
+              className="absolute top-4 right-4 z-10 text-gray-800 bg-white/80 hover:bg-white p-2.5 rounded-full backdrop-blur-sm transition-colors shadow-sm md:hidden"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            {/* Left: Image Area */}
+            <div className="relative h-[300px] md:h-auto md:w-1/2 bg-gray-100 flex-shrink-0 md:min-h-[500px]">
+              <img 
+                src={detailPet.photos && detailPet.photos[0] ? (detailPet.photos[0].startsWith('/uploads/') ? `http://localhost:5000${detailPet.photos[0]}` : detailPet.photos[0]) : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=400&h=500'} 
+                alt={detailPet.name} 
+                className="absolute inset-0 w-full h-full object-cover" 
+              />
+              
+              <div className={`absolute top-4 left-4 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-md flex items-center gap-2 ${detailPet.status === 'lost' ? 'bg-[#b92b27]' : 'bg-green-600'}`}>
+                <div className="w-2 h-2 rounded-full bg-white"></div>
+                {detailPet.status.toUpperCase()}
+              </div>
+            </div>
+
+            {/* Right: Content Area */}
+            <div className="p-6 md:p-10 md:w-1/2 flex flex-col max-h-[85vh] md:max-h-[90vh] overflow-y-auto bg-white">
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <h2 className="text-4xl font-black text-gray-800 mb-2">{detailPet.name}</h2>
+                  <div className="flex items-center text-gray-500 font-bold text-sm">
+                    <svg className="w-5 h-5 mr-1.5 text-[#f97316]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    {detailPet.location || 'Location unknown'}
+                  </div>
+                </div>
+                
+                {/* Desktop Close Button */}
+                <button 
+                  onClick={() => { setIsDetailModalOpen(false); setDetailPet(null); }}
+                  className="hidden md:flex text-gray-400 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 p-3 rounded-full transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+
+              <div className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100 flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-orange-500 flex-shrink-0">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">Last Seen</div>
+                  <div className="font-bold text-gray-800">{getRelativeTime(detailPet.lastSeenDate || detailPet.createdAt)}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col justify-center">
+                  <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Species</div>
+                  <div className="font-bold text-gray-800 text-lg">{detailPet.species || 'Unknown'}</div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col justify-center">
+                  <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Breed</div>
+                  <div className="font-bold text-gray-800 text-lg">{detailPet.breed || 'Unknown'}</div>
+                </div>
+                {detailPet.gender && (
+                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col justify-center">
+                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Gender</div>
+                    <div className="font-bold text-gray-800 text-lg">{detailPet.gender}</div>
+                  </div>
+                )}
+                {detailPet.age && (
+                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col justify-center">
+                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Age</div>
+                    <div className="font-bold text-gray-800 text-lg">{detailPet.age}</div>
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-8 flex-1">
+                <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                  Description
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {detailPet.description || 'No additional description provided by the lister.'}
+                </p>
+              </div>
+              
+              <div className="pt-6 border-t border-gray-100 mt-auto">
+                <button 
+                  onClick={() => { setIsDetailModalOpen(false); setDetailPet(null); }}
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-4 rounded-xl transition-colors text-lg"
+                >
+                  Close Details
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

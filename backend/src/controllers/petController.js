@@ -53,7 +53,7 @@ exports.getPets = async (req, res, next) => {
     const limitNum = parseInt(limit, 10) || 10;
     const startIndex = (pageNum - 1) * limitNum;
     
-    mongooseQuery = mongooseQuery.skip(startIndex).limit(limitNum).populate('owner', 'name contactNumber whatsappNumber');
+    mongooseQuery = mongooseQuery.skip(startIndex).limit(limitNum).populate('owner', 'name email contactNumber whatsappNumber');
 
     const pets = await mongooseQuery;
 
@@ -68,7 +68,7 @@ exports.getPets = async (req, res, next) => {
 // @access  Public
 exports.getPet = async (req, res, next) => {
   try {
-    const pet = await Pet.findById(req.params.id).populate('owner', 'name contactNumber whatsappNumber');
+    const pet = await Pet.findById(req.params.id).populate('owner', 'name email contactNumber whatsappNumber');
     if (!pet) {
       return res.status(404).json({ success: false, error: 'Pet not found' });
     }
@@ -254,6 +254,33 @@ exports.deleteMyPet = async (req, res, next) => {
 
     await pet.deleteOne();
     res.status(200).json({ success: true, data: {} });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Contact pet owner
+// @route   POST /api/v1/pets/:id/contact
+// @access  Private
+exports.contactOwner = async (req, res, next) => {
+  try {
+    const pet = await Pet.findById(req.params.id).populate('owner', 'email name');
+    if (!pet) return res.status(404).json({ success: false, error: 'Pet not found' });
+
+    if (pet.owner._id.toString() === req.user.id) {
+      return res.status(400).json({ success: false, error: 'You cannot contact yourself' });
+    }
+
+    const { message } = req.body;
+    if (!message) {
+      return res.status(400).json({ success: false, error: 'Message is required' });
+    }
+
+    // Mock secure email logic
+    console.log(`[Secure Messaging] Sending message to ${pet.owner.email} regarding pet ${pet.name}`);
+    console.log(`[Message]: ${message}`);
+
+    res.status(200).json({ success: true, message: 'Message sent securely to the owner.' });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }
