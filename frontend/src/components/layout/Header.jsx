@@ -20,7 +20,7 @@ export default function Header({ currentPage, user, onLogout, setCurrentPage }) 
   const fetchCart = async () => {
     try {
       setCartLoading(true);
-      const res = await axios.get('http://localhost:5000/api/v1/products/cart', {
+      const res = await axios.get('/api/v1/products/cart', {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       setCart(res.data.data);
@@ -53,7 +53,7 @@ export default function Header({ currentPage, user, onLogout, setCurrentPage }) 
       );
       setCart(updatedCart);
 
-      await axios.put(`http://localhost:5000/api/v1/products/cart/${productId}`, {
+      await axios.put(`/api/v1/products/cart/${productId}`, {
         quantity: newQuantity
       }, {
         headers: { Authorization: `Bearer ${getToken()}` }
@@ -71,7 +71,7 @@ export default function Header({ currentPage, user, onLogout, setCurrentPage }) 
       // Optimistic update
       setCart(cart.filter(item => item.productId._id !== productId));
 
-      await axios.delete(`http://localhost:5000/api/v1/products/cart/${productId}`, {
+      await axios.delete(`/api/v1/products/cart/${productId}`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       window.dispatchEvent(new Event('cartUpdatedBadgeOnly'));
@@ -84,7 +84,7 @@ export default function Header({ currentPage, user, onLogout, setCurrentPage }) 
   const handleCheckout = async () => {
     try {
       setCheckoutStatus('loading');
-      await axios.post(`http://localhost:5000/api/v1/products/cart/checkout`, {}, {
+      await axios.post(`/api/v1/products/cart/checkout`, {}, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       setCart([]);

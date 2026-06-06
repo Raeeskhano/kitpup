@@ -36,7 +36,7 @@ export default function Marketplace() {
         token = user.token || '';
       }
 
-      let url = `http://localhost:5000/api/v1/pets?species=${species}&minFee=${feeRange.min}&maxFee=${feeRange.max}&sort=${sort}`;
+      let url = `/api/v1/pets?species=${species}&minFee=${feeRange.min}&maxFee=${feeRange.max}&sort=${sort}`;
       if (search) url += `&search=${search}`;
       if (breed !== 'Any Breed') url += `&breed=${breed}`;
       if (location) url += `&location=${location}`;
@@ -71,7 +71,7 @@ export default function Marketplace() {
         token = user.token || '';
       }
 
-      const res = await axios.patch(`http://localhost:5000/api/v1/pets/${id}/favorite`, {}, {
+      const res = await axios.patch(`/api/v1/pets/${id}/favorite`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setFavorites(res.data.favorites);
@@ -92,7 +92,7 @@ export default function Marketplace() {
       }
 
       // Update user contact info
-      await axios.patch('http://localhost:5000/api/v1/users/me', 
+      await axios.patch('/api/v1/users/me', 
         { contactNumber: postForm.contactNumber, whatsappNumber: postForm.whatsappNumber },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -110,7 +110,7 @@ export default function Marketplace() {
         }
       }
 
-      await axios.post('http://localhost:5000/api/v1/pets', formData, {
+      await axios.post('/api/v1/pets', formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -135,7 +135,7 @@ export default function Marketplace() {
     try {
       const storedUser = localStorage.getItem('kitpup_user');
       let token = storedUser ? JSON.parse(storedUser).token : '';
-      const res = await axios.get('http://localhost:5000/api/v1/users/me', {
+      const res = await axios.get('/api/v1/users/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const userData = res.data.data;
@@ -326,7 +326,7 @@ export default function Marketplace() {
                 {/* Image & Badges */}
                 <div className="relative aspect-[4/5] overflow-hidden bg-gray-100">
                   {pet.photos && pet.photos.length > 0 ? (
-                    <img src={pet.photos[0].startsWith('/') ? `http://localhost:5000${pet.photos[0]}` : pet.photos[0]} alt={pet.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={pet.photos[0].startsWith('/') ? `${pet.photos[0]}` : pet.photos[0]} alt={pet.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                   )}
@@ -488,7 +488,7 @@ export default function Marketplace() {
             {/* Left: Image Area */}
             <div className="relative h-[300px] md:h-auto md:w-1/2 bg-gray-50 flex-shrink-0 md:min-h-[500px]">
               {selectedPet.photos && selectedPet.photos.length > 0 ? (
-                <img src={selectedPet.photos[0].startsWith('/') ? `http://localhost:5000${selectedPet.photos[0]}` : selectedPet.photos[0]} alt={selectedPet.name} className="absolute inset-0 w-full h-full object-cover" />
+                <img src={selectedPet.photos[0].startsWith('/') ? `${selectedPet.photos[0]}` : selectedPet.photos[0]} alt={selectedPet.name} className="absolute inset-0 w-full h-full object-cover" />
               ) : (
                 <div className="absolute inset-0 w-full h-full flex items-center justify-center text-gray-400">No Image</div>
               )}

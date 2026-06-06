@@ -14,7 +14,7 @@ export default function Login({ onLogin, navigateTo }) {
     if (email && password) {
       try {
         setLoading(true);
-        const res = await axios.post('http://localhost:5000/api/v1/users/login', { email, password });
+        const res = await axios.post('/api/v1/users/login', { email, password });
         if (res.data.success) {
           const { token, user } = res.data;
           onLogin({ ...user, token });

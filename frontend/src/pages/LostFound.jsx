@@ -57,7 +57,7 @@ export default function LostFound() {
   const fetchPets = async (pageNum = 1, reset = false) => {
     if (pageNum === 1) setLoading(true);
     try {
-      let url = `http://localhost:5000/api/v1/pets?status=${activeTab}&page=${pageNum}&limit=9`;
+      let url = `/api/v1/pets?status=${activeTab}&page=${pageNum}&limit=9`;
       if (filters.species !== 'All') url += `&species=${filters.species}`;
       
       const res = await axios.get(url, { headers: { Authorization: `Bearer ${getToken()}` } });
@@ -91,7 +91,7 @@ export default function LostFound() {
       data.append('status', 'lost');
       if (photoFile) data.append('photos', photoFile);
 
-      await axios.post('http://localhost:5000/api/v1/pets', data, {
+      await axios.post('/api/v1/pets', data, {
         headers: { 
           Authorization: `Bearer ${getToken()}`,
           'Content-Type': 'multipart/form-data'
@@ -118,7 +118,7 @@ export default function LostFound() {
 
   const handleNotifyNearby = async (id) => {
     try {
-      await axios.post(`http://localhost:5000/api/v1/pets/${id}/notify`, {}, {
+      await axios.post(`/api/v1/pets/${id}/notify`, {}, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       setToastMsg('Nearby users have been notified!');
@@ -129,7 +129,7 @@ export default function LostFound() {
 
   const handleMarkFound = async (id) => {
     try {
-      await axios.patch(`http://localhost:5000/api/v1/pets/${id}`, { status: 'found' }, {
+      await axios.patch(`/api/v1/pets/${id}`, { status: 'found' }, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       setToastMsg('Pet marked as found! 🐾');
@@ -141,7 +141,7 @@ export default function LostFound() {
 
   const handleMarkReunited = async (id) => {
     try {
-      await axios.patch(`http://localhost:5000/api/v1/pets/${id}`, { status: 'reunited' }, {
+      await axios.patch(`/api/v1/pets/${id}`, { status: 'reunited' }, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       setToastMsg('Pet marked as reunited! 🎉');
@@ -244,7 +244,7 @@ export default function LostFound() {
                 {/* Image Area */}
                 <div className="relative h-[200px] w-full rounded-2xl overflow-hidden mb-4 bg-gray-100 flex-shrink-0">
                   <img 
-                    src={pet.photos && pet.photos[0] ? (pet.photos[0].startsWith('/uploads/') ? `http://localhost:5000${pet.photos[0]}` : pet.photos[0]) : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=400&h=500'} 
+                    src={pet.photos && pet.photos[0] ? (pet.photos[0].startsWith('/uploads/') ? `${pet.photos[0]}` : pet.photos[0]) : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=400&h=500'} 
                     alt={pet.name} 
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                   />
@@ -499,7 +499,7 @@ export default function LostFound() {
             {/* Left: Image Area */}
             <div className="relative h-[300px] md:h-auto md:w-1/2 bg-gray-100 flex-shrink-0 md:min-h-[500px]">
               <img 
-                src={detailPet.photos && detailPet.photos[0] ? (detailPet.photos[0].startsWith('/uploads/') ? `http://localhost:5000${detailPet.photos[0]}` : detailPet.photos[0]) : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=400&h=500'} 
+                src={detailPet.photos && detailPet.photos[0] ? (detailPet.photos[0].startsWith('/uploads/') ? `${detailPet.photos[0]}` : detailPet.photos[0]) : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=400&h=500'} 
                 alt={detailPet.name} 
                 className="absolute inset-0 w-full h-full object-cover" 
               />

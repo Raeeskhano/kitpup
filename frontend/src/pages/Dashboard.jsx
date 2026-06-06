@@ -85,11 +85,11 @@ export default function Dashboard({ setCurrentPage }) {
           recentReportsRes,
           recentLostPetsRes
         ] = await Promise.all([
-          axios.get('http://localhost:5000/api/v1/pets?status=active', config),
-          axios.get('http://localhost:5000/api/v1/reports?nearby=true', config),
-          axios.get('http://localhost:5000/api/v1/pets?status=lost', config),
-          axios.get('http://localhost:5000/api/v1/reports?limit=10', config),
-          axios.get('http://localhost:5000/api/v1/pets?status=lost&limit=5', config)
+          axios.get('/api/v1/pets?status=active', config),
+          axios.get('/api/v1/reports?nearby=true', config),
+          axios.get('/api/v1/pets?status=lost', config),
+          axios.get('/api/v1/reports?limit=10', config),
+          axios.get('/api/v1/pets?status=lost&limit=5', config)
         ]);
 
         setStats({

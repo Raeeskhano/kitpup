@@ -64,7 +64,7 @@ export default function AIChat() {
 
       const token = localStorage.getItem('kitpup_user') ? JSON.parse(localStorage.getItem('kitpup_user')).token : null;
       
-      const res = await axios.post('http://localhost:5000/api/v1/ai/chat', { 
+      const res = await axios.post('/api/v1/ai/chat', { 
         messages: apiMessages, 
         systemPrompt: SYSTEM_PROMPT 
       }, {

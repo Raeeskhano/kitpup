@@ -92,7 +92,7 @@ export default function RescueReport() {
   const fetchRecentReports = async () => {
     try {
       setLoadingReports(true);
-      const res = await axios.get('http://localhost:5000/api/v1/reports?nearby=true&limit=3', {
+      const res = await axios.get('/api/v1/reports?nearby=true&limit=3', {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       setRecentReports(res.data.data);
@@ -202,7 +202,7 @@ export default function RescueReport() {
         formData.append('photos', photo);
       });
 
-      await axios.post('http://localhost:5000/api/v1/reports', formData, {
+      await axios.post('/api/v1/reports', formData, {
         headers: { 
           Authorization: `Bearer ${getToken()}`,
           'Content-Type': 'multipart/form-data'
@@ -478,7 +478,7 @@ export default function RescueReport() {
                 <div key={report._id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex gap-4">
                   <div className="w-[60px] h-[60px] bg-gray-100 rounded-xl shrink-0 overflow-hidden">
                     {report.photos && report.photos.length > 0 ? (
-                      <img src={`http://localhost:5000${report.photos[0]}`} alt="Report" className="w-full h-full object-cover" />
+                      <img src={`${report.photos[0]}`} alt="Report" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>

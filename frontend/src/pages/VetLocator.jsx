@@ -62,7 +62,7 @@ export default function VetLocator() {
         if (filter === 'Emergency') query = 'emergency';
         if (filter === 'Top Rated') query = 'top_rated';
         
-        const res = await axios.get(`http://localhost:5000/api/v1/vets?filter=${query}`, {
+        const res = await axios.get(`/api/v1/vets?filter=${query}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         

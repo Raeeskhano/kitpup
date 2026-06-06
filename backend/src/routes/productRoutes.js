@@ -1,6 +1,5 @@
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
+const { upload } = require('../config/cloudinary');
 const {
   getProducts,
   getProduct,
@@ -20,16 +19,6 @@ const {
 const { requireAuth } = require('../middlewares/auth');
 
 const router = express.Router();
-
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename(req, file, cb) {
-    cb(null, `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`);
-  }
-});
-const upload = multer({ storage });
 
 // Specific routes first to avoid conflicts with /:id
 router.post('/cart/checkout', requireAuth, checkout);

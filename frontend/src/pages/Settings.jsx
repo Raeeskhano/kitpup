@@ -45,7 +45,7 @@ export default function Settings({ onLogout }) {
     try {
       const stored = localStorage.getItem('kitpup_user');
       const token = stored ? JSON.parse(stored).token : '';
-      const res = await axios.get('http://localhost:5000/api/v1/users/me', {
+      const res = await axios.get('/api/v1/users/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUser(res.data.data);
@@ -83,7 +83,7 @@ export default function Settings({ onLogout }) {
     setUser({ ...user, notifications: newNotifications });
 
     try {
-      await axios.patch('http://localhost:5000/api/v1/users/me', 
+      await axios.patch('/api/v1/users/me', 
         { notifications: newNotifications },
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
@@ -99,7 +99,7 @@ export default function Settings({ onLogout }) {
     setError('');
     setIsSaving(true);
     try {
-      const res = await axios.patch('http://localhost:5000/api/v1/users/me', 
+      const res = await axios.patch('/api/v1/users/me', 
         { email: emailInput },
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
@@ -124,7 +124,7 @@ export default function Settings({ onLogout }) {
     
     setIsSaving(true);
     try {
-      await axios.patch('http://localhost:5000/api/v1/users/me/password', 
+      await axios.patch('/api/v1/users/me/password', 
         { currentPassword: passwords.current, newPassword: passwords.new },
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
@@ -142,7 +142,7 @@ export default function Settings({ onLogout }) {
     setError('');
     setIsSaving(true);
     try {
-      const res = await axios.patch('http://localhost:5000/api/v1/users/me', 
+      const res = await axios.patch('/api/v1/users/me', 
         { preferences: { measurementSystem: measureSystem } },
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
@@ -160,7 +160,7 @@ export default function Settings({ onLogout }) {
     setError('');
     setIsSaving(true);
     try {
-      const res = await axios.patch('http://localhost:5000/api/v1/users/me', 
+      const res = await axios.patch('/api/v1/users/me', 
         { contactNumber: contactInputs.contactNumber, whatsappNumber: contactInputs.whatsappNumber },
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );

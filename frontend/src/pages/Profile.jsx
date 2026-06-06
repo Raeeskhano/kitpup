@@ -53,10 +53,10 @@ export default function Profile() {
       const config = { headers: { Authorization: `Bearer ${getToken()}` } };
       
       const [userRes, petsRes, actRes, productsRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/v1/users/me', config),
-        axios.get('http://localhost:5000/api/v1/pets/my', config),
-        axios.get('http://localhost:5000/api/v1/users/me/activity?limit=3', config),
-        axios.get('http://localhost:5000/api/v1/products/my', config)
+        axios.get('/api/v1/users/me', config),
+        axios.get('/api/v1/pets/my', config),
+        axios.get('/api/v1/users/me/activity?limit=3', config),
+        axios.get('/api/v1/products/my', config)
       ]);
 
       setUser(userRes.data.data);
@@ -99,7 +99,7 @@ export default function Profile() {
         formData.append('avatar', avatarFile); // Needs proper backend support (currently using same endpoint logic, but let's assume multer handles it, wait userController uses req.file for updateMe)
       }
 
-      const res = await axios.patch('http://localhost:5000/api/v1/users/me', formData, {
+      const res = await axios.patch('/api/v1/users/me', formData, {
         headers: { 
           Authorization: `Bearer ${getToken()}`,
           'Content-Type': 'multipart/form-data'
@@ -167,7 +167,7 @@ export default function Profile() {
       const config = { headers: { Authorization: `Bearer ${getToken()}` } };
 
       // Update user contact info
-      await axios.patch('http://localhost:5000/api/v1/users/me', 
+      await axios.patch('/api/v1/users/me', 
         { contactNumber: petForm.contactNumber, whatsappNumber: petForm.whatsappNumber },
         config
       );
@@ -189,12 +189,12 @@ export default function Profile() {
 
       if (selectedPet) {
         // Update
-        const res = await axios.patch(`http://localhost:5000/api/v1/pets/my/${selectedPet._id}`, formData, config);
+        const res = await axios.patch(`/api/v1/pets/my/${selectedPet._id}`, formData, config);
         setPets(pets.map(p => p._id === selectedPet._id ? res.data.data : p));
         showToast('Pet updated!');
       } else {
         // Create
-        const res = await axios.post('http://localhost:5000/api/v1/pets/my', formData, config);
+        const res = await axios.post('/api/v1/pets/my', formData, config);
         setPets([...pets, res.data.data]);
         showToast('Pet added!');
       }
@@ -207,7 +207,7 @@ export default function Profile() {
   const handleRemovePet = async () => {
     if (!selectedPet) return;
     try {
-      await axios.delete(`http://localhost:5000/api/v1/pets/my/${selectedPet._id}`, {
+      await axios.delete(`/api/v1/pets/my/${selectedPet._id}`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       setPets(pets.filter(p => p._id !== selectedPet._id));
@@ -248,11 +248,11 @@ export default function Profile() {
     try {
       const config = { headers: { Authorization: `Bearer ${getToken()}` } };
       if (selectedProduct) {
-        const res = await axios.patch(`http://localhost:5000/api/v1/products/my/${selectedProduct._id}`, productForm, config);
+        const res = await axios.patch(`/api/v1/products/my/${selectedProduct._id}`, productForm, config);
         setProducts(products.map(p => p._id === selectedProduct._id ? res.data.data : p));
         showToast('Accessory updated!');
       } else {
-        const res = await axios.post('http://localhost:5000/api/v1/products', productForm, config);
+        const res = await axios.post('/api/v1/products', productForm, config);
         setProducts([...products, res.data.data]);
         showToast('Accessory added!');
       }
@@ -265,7 +265,7 @@ export default function Profile() {
   const handleRemoveProduct = async () => {
     if (!selectedProduct) return;
     try {
-      await axios.delete(`http://localhost:5000/api/v1/products/my/${selectedProduct._id}`, {
+      await axios.delete(`/api/v1/products/my/${selectedProduct._id}`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       setProducts(products.filter(p => p._id !== selectedProduct._id));
@@ -373,7 +373,7 @@ export default function Profile() {
               >
                 <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-200 mr-2.5 group-hover:border-brand-orange/30 transition-colors">
                    {pet.photos && pet.photos.length > 0 ? (
-                     <img src={pet.photos[0].startsWith('/') ? `http://localhost:5000${pet.photos[0]}` : pet.photos[0]} alt={pet.name} className="w-full h-full object-cover" />
+                     <img src={pet.photos[0].startsWith('/') ? `${pet.photos[0]}` : pet.photos[0]} alt={pet.name} className="w-full h-full object-cover" />
                    ) : (
                      <span className="text-xs font-bold text-gray-400 uppercase">{pet.name.charAt(0)}</span>
                    )}
@@ -421,7 +421,7 @@ export default function Profile() {
               >
                 <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-200 mr-2.5 group-hover:border-brand-orange/30 transition-colors">
                    {product.photos && product.photos.length > 0 ? (
-                     <img src={product.photos[0].startsWith('/') ? `http://localhost:5000${product.photos[0]}` : product.photos[0]} alt={product.name} className="w-full h-full object-cover" />
+                     <img src={product.photos[0].startsWith('/') ? `${product.photos[0]}` : product.photos[0]} alt={product.name} className="w-full h-full object-cover" />
                    ) : (
                      <span className="text-xs font-bold text-gray-400 uppercase">{product.name.charAt(0)}</span>
                    )}

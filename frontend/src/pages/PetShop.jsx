@@ -23,7 +23,7 @@ export default function PetShop() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/v1/products?category=${category}`);
+      const res = await axios.get(`/api/v1/products?category=${category}`);
       setProducts(res.data.data);
     } catch (err) {
       console.error('Failed to load products', err);
@@ -46,7 +46,7 @@ export default function PetShop() {
         token = user.token || '';
       }
 
-      await axios.post('http://localhost:5000/api/v1/products/cart', {
+      await axios.post('/api/v1/products/cart', {
         productId,
         quantity: 1
       }, {
@@ -100,7 +100,7 @@ export default function PetShop() {
         }
       }
 
-      await axios.post('http://localhost:5000/api/v1/products', formData, {
+      await axios.post('/api/v1/products', formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -192,7 +192,7 @@ export default function PetShop() {
               <div className="relative h-40 bg-gray-50 overflow-hidden">
                 {product.photos && product.photos.length > 0 ? (
                   <img 
-                    src={product.photos[0].startsWith('/') ? `http://localhost:5000${product.photos[0]}` : product.photos[0]} 
+                    src={product.photos[0].startsWith('/') ? `${product.photos[0]}` : product.photos[0]} 
                     alt={product.name} 
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                   />
@@ -351,7 +351,7 @@ export default function PetShop() {
             {/* Left: Image Area */}
             <div className="relative h-[300px] md:h-auto md:w-1/2 bg-gray-50 flex-shrink-0 md:min-h-[500px]">
               <img 
-                src={detailProduct.photos && detailProduct.photos.length > 0 ? (detailProduct.photos[0].startsWith('/') ? `http://localhost:5000${detailProduct.photos[0]}` : detailProduct.photos[0]) : ''} 
+                src={detailProduct.photos && detailProduct.photos.length > 0 ? (detailProduct.photos[0].startsWith('/') ? `${detailProduct.photos[0]}` : detailProduct.photos[0]) : ''} 
                 alt={detailProduct.name} 
                 className="absolute inset-0 w-full h-full object-cover" 
               />
