@@ -2,8 +2,6 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function CheckoutCancel({ setCurrentPage }) {
-  const navigate = useNavigate();
-  
   useEffect(() => {
     if (setCurrentPage) {
         setCurrentPage('petshop');
@@ -23,7 +21,7 @@ export default function CheckoutCancel({ setCurrentPage }) {
           Your payment was cancelled. No charges were made. You can try again when you're ready.
         </p>
         <button
-          onClick={() => navigate('/')}
+          onClick={() => window.location.href = '/'}
           className="px-8 py-4 bg-brand-orange text-white rounded-xl font-bold hover:bg-orange-600 shadow-lg shadow-orange-500/30 transition-all hover:-translate-y-1"
         >
           Return to Shop

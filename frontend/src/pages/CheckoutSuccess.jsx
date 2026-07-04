@@ -2,8 +2,6 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function CheckoutSuccess({ setCurrentPage }) {
-  const navigate = useNavigate();
-
   useEffect(() => {
     // Fire event to ensure cart badge is updated (should be empty now)
     window.dispatchEvent(new Event('cartUpdated'));
@@ -25,7 +23,7 @@ export default function CheckoutSuccess({ setCurrentPage }) {
           Thank you for your purchase! Your order has been confirmed and we're getting it ready for your pawsome friend.
         </p>
         <button
-          onClick={() => navigate('/')}
+          onClick={() => window.location.href = '/'}
           className="px-8 py-4 bg-brand-orange text-white rounded-xl font-bold hover:bg-orange-600 shadow-lg shadow-orange-500/30 transition-all hover:-translate-y-1"
         >
           Return to Dashboard
