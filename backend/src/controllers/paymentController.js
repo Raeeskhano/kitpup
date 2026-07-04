@@ -1,4 +1,5 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// Initialize stripe with the key, or a fallback to prevent the entire server from crashing if the env var is missing
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'missing_stripe_key_in_env');
 const User = require('../models/User');
 const Order = require('../models/Order');
 

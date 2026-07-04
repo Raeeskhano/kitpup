@@ -1,9 +1,9 @@
 const dotenv = require('dotenv');
+// Load env vars FIRST so all required files have access
+dotenv.config(); 
+
 const connectDB = require('./config/db');
 const app = require('./app');
-
-// Load env vars
-dotenv.config(); 
 
 // Connect to database
 connectDB();
