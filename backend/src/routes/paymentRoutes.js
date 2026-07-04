@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { createCheckoutSession, webhook } = require('../controllers/paymentController');
-const { protect } = require('../middleware/auth');
+const { protect } = require('../middlewares/auth');
 
 // Create Stripe Checkout Session
 router.post('/create-checkout-session', protect, createCheckoutSession);
