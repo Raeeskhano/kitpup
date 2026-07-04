@@ -84,18 +84,15 @@ export default function Header({ currentPage, user, onLogout, setCurrentPage }) 
   const handleCheckout = async () => {
     try {
       setCheckoutStatus('loading');
-      await axios.post(`/api/v1/products/cart/checkout`, {}, {
+      const res = await axios.post(`/api/v1/payments/create-checkout-session`, {}, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
-      setCart([]);
-      setCheckoutStatus('success');
-      window.dispatchEvent(new Event('cartUpdatedBadgeOnly'));
       
-      // Auto close after success
-      setTimeout(() => {
-        setCheckoutStatus(null);
-        setShowCart(false);
-      }, 2500);
+      if (res.data && res.data.url) {
+        window.location.href = res.data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
     } catch (err) {
       console.error('Checkout failed', err);
       setCheckoutStatus(null);
@@ -197,15 +194,7 @@ export default function Header({ currentPage, user, onLogout, setCurrentPage }) 
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {checkoutStatus === 'success' ? (
-                <div className="flex flex-col items-center justify-center h-full text-center animate-fadeIn">
-                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
-                    <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">Order Confirmed!</h3>
-                  <p className="text-gray-500">Your pawsome items are on their way.</p>
-                </div>
-              ) : cartLoading ? (
+              {cartLoading ? (
                 <div className="animate-pulse space-y-4">
                   {[...Array(3)].map((_, i) => (
                     <div key={i} className="flex gap-4">
@@ -252,7 +241,7 @@ export default function Header({ currentPage, user, onLogout, setCurrentPage }) 
               )}
             </div>
 
-            {cart.length > 0 && checkoutStatus !== 'success' && (
+            {cart.length > 0 && (
               <div className="p-6 border-t border-gray-100 bg-gray-50">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-gray-600 font-medium">Subtotal</span>

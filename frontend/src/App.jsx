@@ -15,6 +15,9 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 
+import CheckoutSuccess from './pages/CheckoutSuccess';
+import CheckoutCancel from './pages/CheckoutCancel';
+
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [authPage, setAuthPage] = useState('login');
@@ -51,6 +54,10 @@ function App() {
   };
 
   const renderPage = () => {
+    const path = window.location.pathname;
+    if (path === '/checkout/success') return <CheckoutSuccess setCurrentPage={setCurrentPage} />;
+    if (path === '/checkout/cancel') return <CheckoutCancel setCurrentPage={setCurrentPage} />;
+
     switch (currentPage) {
       case 'dashboard': return <Dashboard setCurrentPage={setCurrentPage} />;
       case 'marketplace': return <Marketplace />;
