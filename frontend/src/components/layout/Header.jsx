@@ -31,6 +31,9 @@ export default function Header({ currentPage, user, onLogout, setCurrentPage }) 
       setCart(res.data.data);
     } catch (err) {
       console.error('Failed to fetch cart', err);
+      if (err.response && err.response.status === 401) {
+        if (onLogout) onLogout();
+      }
     } finally {
       setCartLoading(false);
     }
