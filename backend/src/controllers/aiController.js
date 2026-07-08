@@ -36,16 +36,44 @@ exports.chatWithAI = async (req, res, next) => {
       };
     });
 
-    const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
-      systemInstruction: {
-        parts: [{ text: systemPrompt }]
-      },
-      contents: geminiContents
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
+    const modelsToTry = [
+      'gemini-3.5-flash',
+      'gemini-2.5-flash',
+      'gemini-2.5-pro',
+      'gemini-2.0-flash',
+      'gemini-flash-latest'
+    ];
+
+    let response;
+    let lastError;
+
+    for (const model of modelsToTry) {
+      try {
+        response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+          systemInstruction: {
+            parts: [{ text: systemPrompt }]
+          },
+          contents: geminiContents
+        }, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        // If successful, break out of the loop
+        if (response && response.data) {
+          console.log(`Successfully generated content using model: ${model}`);
+          break;
+        }
+      } catch (err) {
+        console.warn(`Model ${model} failed:`, err.response?.data?.error?.message || err.message);
+        lastError = err;
       }
-    });
+    }
+
+    if (!response || !response.data) {
+      throw lastError || new Error('All Gemini models failed to generate content');
+    }
 
     const replyText = response.data.candidates[0].content.parts[0].text;
     res.status(200).json({ success: true, data: replyText });
