@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Platform, Image } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, Platform, Image, Alert } from 'react-native';
 import { Bell, ArrowLeft } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -37,7 +37,10 @@ export default function TopBar({ title, back, navigation }) {
         </View>
 
         <View className="flex-row items-center ml-4">
-          <TouchableOpacity className="relative p-2 mr-3 bg-gray-50 rounded-full">
+          <TouchableOpacity 
+            onPress={() => Alert.alert('Notifications', 'You have no new notifications.')}
+            className="relative p-2 mr-3 bg-gray-50 rounded-full"
+          >
             <Bell color="#6b7280" size={20} />
             <View className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
           </TouchableOpacity>

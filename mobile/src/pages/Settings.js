@@ -85,6 +85,38 @@ export default function Settings({ setUser: setGlobalUser }) {
     setIsSaving(false);
   };
 
+  const handleSavePassword = async () => {
+    if (passwords.new !== passwords.confirm) {
+      Alert.alert('Error', 'New passwords do not match');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      const token = await getToken();
+      const res = await axios.patch(`${API_URL}/api/v1/users/me/password`, {
+        currentPassword: passwords.current,
+        newPassword: passwords.new
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const stored = await AsyncStorage.getItem('kitpup_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        u.token = res.data.token;
+        await AsyncStorage.setItem('kitpup_user', JSON.stringify(u));
+      }
+      
+      setActiveModal(null);
+      setPasswords({ current: '', new: '', confirm: '' });
+      Alert.alert('Success', 'Password updated successfully!');
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.error || 'Failed to update password');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleLogout = async () => {
     await AsyncStorage.removeItem('kitpup_user');
     setGlobalUser(null);
@@ -195,7 +227,56 @@ export default function Settings({ setUser: setGlobalUser }) {
         </View>
       </Modal>
 
-      {/* Other Modals (Password, Contact, Measurement) would follow similarly */}
+      {/* Edit Password Modal */}
+      <Modal visible={activeModal === 'password'} animationType="fade" transparent={true}>
+        <View className="flex-1 justify-center items-center bg-black/40 p-4">
+          <View className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="text-xl font-bold text-gray-800">Change Password</Text>
+              <TouchableOpacity onPress={() => setActiveModal(null)}>
+                <X color="gray" size={24} />
+              </TouchableOpacity>
+            </View>
+            
+            <View className="space-y-4">
+              <View>
+                <Text className="text-xs font-bold text-gray-600 mb-1">CURRENT PASSWORD</Text>
+                <TextInput 
+                  secureTextEntry
+                  value={passwords.current}
+                  onChangeText={(t) => setPasswords({...passwords, current: t})}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base"
+                />
+              </View>
+              <View>
+                <Text className="text-xs font-bold text-gray-600 mb-1">NEW PASSWORD</Text>
+                <TextInput 
+                  secureTextEntry
+                  value={passwords.new}
+                  onChangeText={(t) => setPasswords({...passwords, new: t})}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base"
+                />
+              </View>
+              <View>
+                <Text className="text-xs font-bold text-gray-600 mb-1">CONFIRM NEW PASSWORD</Text>
+                <TextInput 
+                  secureTextEntry
+                  value={passwords.confirm}
+                  onChangeText={(t) => setPasswords({...passwords, confirm: t})}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base"
+                />
+              </View>
+              <TouchableOpacity 
+                onPress={handleSavePassword}
+                disabled={isSaving}
+                className={`w-full bg-orange-500 py-4 rounded-xl mt-4 items-center ${isSaving ? 'opacity-70' : ''}`}
+              >
+                {isSaving ? <ActivityIndicator color="white" /> : <Text className="text-white font-bold">Update Password</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
     </ScrollView>
   );

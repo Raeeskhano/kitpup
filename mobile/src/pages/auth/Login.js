@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { API_URL } from '../../api/config';
@@ -32,11 +32,8 @@ export default function Login({ navigation, setUser }) {
   };
 
   return (
-    <KeyboardAvoidingView 
-      className="flex-1 bg-gray-50"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16 }} keyboardShouldPersistTaps="handled">
+    <View className="flex-1 bg-gray-50">
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16, paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
         <View className="mb-8 items-center">
           <View className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center mb-3 shadow-sm">
             <Text className="text-white font-bold text-2xl">K</Text>
@@ -118,6 +115,6 @@ export default function Login({ navigation, setUser }) {
           </View>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
