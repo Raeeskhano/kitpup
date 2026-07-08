@@ -16,12 +16,12 @@ const router = express.Router();
 
 router
   .route('/')
-  .get(requireAuth, getReports)
+  .get(getReports)
   .post(requireAuth, upload.array('photos', 5), createReport);
 
 router
   .route('/:id')
-  .get(requireAuth, getReport)
+  .get(getReport)
   .put(requireAuth, updateReport)
   .delete(requireAuth, deleteReport);
 

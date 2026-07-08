@@ -18,10 +18,15 @@ export default function Header({ currentPage, user, onLogout, setCurrentPage }) 
   };
 
   const fetchCart = async () => {
+    const token = getToken();
+    if (!token) {
+      setCartLoading(false);
+      return;
+    }
     try {
       setCartLoading(true);
       const res = await axios.get('/api/v1/products/cart', {
-        headers: { Authorization: `Bearer ${getToken()}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       setCart(res.data.data);
     } catch (err) {
