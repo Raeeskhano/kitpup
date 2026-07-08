@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, View } from 'react-native';
-import { Home, ShoppingBag, MapPin, MessageCircle, User } from 'lucide-react-native';
+import { Home, ShoppingBag, MapPin, MessageCircle, User, Search, Settings as SettingsIcon } from 'lucide-react-native';
 
 // Placeholder imports for pages
 import Login from './src/pages/auth/Login';
@@ -27,16 +27,18 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // Bottom Tab Navigator for main authenticated routes
-function MainTabs() {
+function MainTabs({ setUser }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ color, size }) => {
           if (route.name === 'Dashboard') return <Home color={color} size={size} />;
+          if (route.name === 'Marketplace') return <Search color={color} size={size} />;
           if (route.name === 'Shop') return <ShoppingBag color={color} size={size} />;
           if (route.name === 'Maps') return <MapPin color={color} size={size} />;
           if (route.name === 'AIChat') return <MessageCircle color={color} size={size} />;
           if (route.name === 'Profile') return <User color={color} size={size} />;
+          if (route.name === 'Settings') return <SettingsIcon color={color} size={size} />;
         },
         tabBarActiveTintColor: '#3b82f6', // blue-500
         tabBarInactiveTintColor: 'gray',
@@ -47,10 +49,14 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Dashboard" component={Dashboard} options={{ title: 'Dashboard' }} />
+      <Tab.Screen name="Marketplace" component={Marketplace} options={{ title: 'Marketplace' }} />
       <Tab.Screen name="Shop" component={PetShop} options={{ title: 'Pet Shop' }} />
       <Tab.Screen name="Maps" component={VetLocator} options={{ title: 'Nearby Clinics' }} />
       <Tab.Screen name="AIChat" component={AIChat} options={{ title: 'KitPup AI' }} />
       <Tab.Screen name="Profile" component={Profile} options={{ title: 'My Profile' }} />
+      <Tab.Screen name="Settings" options={{ title: 'Settings' }}>
+        {(props) => <Settings {...props} setUser={setUser} />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }
@@ -107,13 +113,12 @@ export default function App() {
         ) : (
           // App Stack
           <Stack.Group>
-            <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
+            <Stack.Screen name="Main" options={{ headerShown: false }}>
+              {(props) => <MainTabs {...props} setUser={setUser} />}
+            </Stack.Screen>
             <Stack.Screen name="Marketplace" component={Marketplace} options={{ title: 'Marketplace' }} />
             <Stack.Screen name="RescueReport" component={RescueReport} options={{ title: 'Rescue & Report' }} />
             <Stack.Screen name="LostFound" component={LostFound} options={{ title: 'Lost & Found' }} />
-            <Stack.Screen name="Settings" options={{ title: 'Settings' }}>
-              {(props) => <Settings {...props} setUser={setUser} />}
-            </Stack.Screen>
           </Stack.Group>
         )}
       </Stack.Navigator>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, ActivityIndicator, Alert, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, ActivityIndicator, Alert, Dimensions, KeyboardAvoidingView, Platform } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -200,7 +200,7 @@ export default function PetShop() {
                     <Image source={{ uri: product.photos[0] }} className="w-full h-full" />
                   ) : (
                     <View className="w-full h-full items-center justify-center">
-                      <Text className="text-gray-400 text-xs">No Image</Text>
+                      <Text className="text-gray-500 font-medium text-xs">No Image</Text>
                     </View>
                   )}
                   {product.badge && (
@@ -220,9 +220,9 @@ export default function PetShop() {
                   <TouchableOpacity 
                     onPress={() => handleAddToCart(product._id)}
                     disabled={product.stock === 0 || addingToCartId === product._id}
-                    className={`w-full py-2 rounded-xl mt-2 items-center ${product.stock > 0 ? 'bg-[#92400E]' : 'bg-gray-100'}`}
+                    className={`w-full py-2 rounded-xl mt-2 items-center ${product.stock > 0 ? 'bg-[#92400E]' : 'bg-gray-200'}`}
                   >
-                    <Text className={`font-bold text-sm ${product.stock > 0 ? 'text-white' : 'text-gray-400'}`}>
+                    <Text className={`font-bold text-sm ${product.stock > 0 ? 'text-white' : 'text-gray-500'}`}>
                       {addingToCartId === product._id ? 'Adding...' : (product.stock > 0 ? 'Add to Cart' : 'Out of Stock')}
                     </Text>
                   </TouchableOpacity>
@@ -289,7 +289,7 @@ export default function PetShop() {
                 className={`py-4 rounded-xl items-center flex-row justify-center ${detailProduct.stock > 0 ? 'bg-[#92400E]' : 'bg-gray-200'}`}
               >
                 <ShoppingCart color={detailProduct.stock > 0 ? "white" : "gray"} size={20} className="mr-2" />
-                <Text className={`font-bold text-lg ${detailProduct.stock > 0 ? 'text-white' : 'text-gray-400'}`}>
+                <Text className={`font-bold text-lg ${detailProduct.stock > 0 ? 'text-white' : 'text-gray-500'}`}>
                   {addingToCartId === detailProduct._id ? 'Adding...' : (detailProduct.stock > 0 ? 'Add to Cart' : 'Out of Stock')}
                 </Text>
               </TouchableOpacity>
@@ -300,7 +300,7 @@ export default function PetShop() {
 
       {/* Post Modal */}
       <Modal visible={isModalOpen} animationType="slide" transparent={true}>
-        <View className="flex-1 justify-end bg-black/40">
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 justify-end bg-black/40">
           <View className="bg-white rounded-t-3xl p-6 h-5/6">
             <View className="flex-row justify-between items-center mb-6">
               <Text className="text-xl font-bold text-gray-800">List an Accessory</Text>
@@ -385,7 +385,7 @@ export default function PetShop() {
               <View className="h-20" />
             </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

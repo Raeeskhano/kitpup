@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Modal, ActivityIndicator, Alert, Linking, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Modal, ActivityIndicator, Alert, Linking, Platform, KeyboardAvoidingView } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -210,7 +210,7 @@ export default function LostFound() {
                   {pet.photos && pet.photos.length > 0 ? (
                     <Image source={{ uri: pet.photos[0] }} className="w-full h-full object-cover" />
                   ) : (
-                    <View className="flex-1 items-center justify-center"><Text className="text-gray-400 text-xs">No Image</Text></View>
+                    <View className="flex-1 items-center justify-center"><Text className="text-gray-500 font-medium text-xs">No Image</Text></View>
                   )}
                   <View className={`absolute top-2 right-2 px-2 py-1 rounded-full ${activeTab === 'lost' ? 'bg-[#b92b27]' : 'bg-green-600'}`}>
                     <Text className="text-white text-[10px] font-bold">{pet.status.toUpperCase()}</Text>
@@ -273,7 +273,7 @@ export default function LostFound() {
 
       {/* Report Modal */}
       <Modal visible={isReportOpen} animationType="slide">
-        <View className="flex-1 bg-white">
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-white">
           <View className="flex-row justify-between items-center p-4 pt-12 border-b border-gray-100">
             <Text className="text-xl font-bold text-gray-800">Report Lost Pet</Text>
             <TouchableOpacity onPress={() => setIsReportOpen(false)}><X color="gray" size={24} /></TouchableOpacity>
@@ -315,7 +315,7 @@ export default function LostFound() {
               <Text className="text-white font-bold text-lg">{isSubmitting ? 'Posting...' : 'Post Alert'}</Text>
             </TouchableOpacity>
           </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Detail Modal */}
@@ -327,7 +327,7 @@ export default function LostFound() {
                 {detailPet.photos && detailPet.photos.length > 0 ? (
                   <Image source={{ uri: detailPet.photos[0] }} className="w-full h-full object-cover" />
                 ) : (
-                  <View className="flex-1 items-center justify-center"><Text className="text-gray-400">No Image</Text></View>
+                  <View className="flex-1 items-center justify-center"><Text className="text-gray-500 font-medium">No Image</Text></View>
                 )}
                 <TouchableOpacity 
                   onPress={() => setIsDetailModalOpen(false)}

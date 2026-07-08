@@ -34,7 +34,7 @@ export default function Register({ navigation, setUser }) {
   return (
     <KeyboardAvoidingView 
       className="flex-1 bg-gray-50"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16 }} keyboardShouldPersistTaps="handled">
         <View className="mb-6 items-center">

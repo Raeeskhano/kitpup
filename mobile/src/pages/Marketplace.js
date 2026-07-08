@@ -18,6 +18,8 @@ export default function Marketplace() {
 
   // Modal State
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterBreed, setFilterBreed] = useState('');
+  
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedPet, setSelectedPet] = useState(null);
 
@@ -29,6 +31,7 @@ export default function Marketplace() {
 
       let url = `${API_URL}/api/v1/pets?species=${species}`;
       if (search) url += `&search=${search}`;
+      if (filterBreed) url += `&breed=${filterBreed}`;
 
       const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
@@ -46,7 +49,7 @@ export default function Marketplace() {
       fetchPets();
     }, 400);
     return () => clearTimeout(delayDebounceFn);
-  }, [species, search]);
+  }, [species, search, filterBreed]);
 
   const handleFavorite = async (id) => {
     try {
@@ -138,7 +141,7 @@ export default function Marketplace() {
                   {pet.photos && pet.photos.length > 0 ? (
                     <Image source={{ uri: pet.photos[0] }} className="w-full h-full" />
                   ) : (
-                    <View className="flex-1 items-center justify-center"><Text className="text-gray-400">No Image</Text></View>
+                    <View className="flex-1 items-center justify-center"><Text className="text-gray-500 font-medium">No Image</Text></View>
                   )}
                   <TouchableOpacity 
                     onPress={() => handleFavorite(pet._id)}
@@ -177,7 +180,7 @@ export default function Marketplace() {
                 {selectedPet.photos && selectedPet.photos.length > 0 ? (
                   <Image source={{ uri: selectedPet.photos[0] }} className="w-full h-full" />
                 ) : (
-                  <View className="flex-1 items-center justify-center"><Text className="text-gray-400">No Image</Text></View>
+                  <View className="flex-1 items-center justify-center"><Text className="text-gray-500 font-medium">No Image</Text></View>
                 )}
                 <TouchableOpacity 
                   onPress={() => setIsDetailsModalOpen(false)}
@@ -230,15 +233,30 @@ export default function Marketplace() {
         )}
       </Modal>
 
-      {/* Filter Modal placeholder */}
+      {/* Filter Modal */}
       <Modal visible={isFilterOpen} animationType="slide" transparent={true}>
         <View className="flex-1 justify-end bg-black/40">
-          <View className="bg-white p-6 rounded-t-3xl h-1/2">
+          <View className="bg-white p-6 rounded-t-3xl min-h-[40%]">
             <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-xl font-bold">Filters</Text>
+              <Text className="text-xl font-bold text-gray-800">Filter By Breed</Text>
               <TouchableOpacity onPress={() => setIsFilterOpen(false)}><X color="gray" size={24} /></TouchableOpacity>
             </View>
-            <Text className="text-center text-gray-500">Filters under construction...</Text>
+            <View>
+              <Text className="text-sm font-bold text-gray-700 mb-1">Breed Name</Text>
+              <TextInput 
+                value={filterBreed}
+                onChangeText={setFilterBreed}
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base text-gray-800" 
+                placeholder="e.g. Golden Retriever" 
+                placeholderTextColor="#6b7280"
+              />
+            </View>
+            <TouchableOpacity 
+              onPress={() => setIsFilterOpen(false)}
+              className="w-full bg-orange-500 py-3.5 rounded-xl shadow-sm items-center mt-6"
+            >
+              <Text className="text-white font-bold text-base">Apply Filter</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
