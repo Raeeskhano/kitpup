@@ -170,8 +170,7 @@ exports.updateMe = async (req, res, next) => {
     if (notifications) updateFields.notifications = notifications;
 
     if (req.file) {
-      // In a real app we'd upload to Cloudinary/S3, here we just save the local path
-      updateFields.avatar = `http://localhost:5000/uploads/${req.file.filename}`;
+      updateFields.avatar = req.file.path;
     }
 
     const user = await User.findByIdAndUpdate(req.user.id, updateFields, {
