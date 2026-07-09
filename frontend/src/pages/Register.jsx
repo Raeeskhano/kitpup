@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { api } from '../utils/api';
 import { useToast } from '../components/Toast';
+import logoUrl from '../assets/logo.png';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -66,9 +67,7 @@ const Register = () => {
         
         {/* Logo */}
         <div className="flex flex-col items-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-2xl">
-            K
-          </div>
+          <img src={logoUrl} alt="KitPup Logo" className="w-16 h-16 rounded-xl object-contain" />
           <h1 className="font-bold text-2xl text-gray-800">Create Account</h1>
           <p className="text-gray-500 text-sm">Join the KitPup community</p>
         </div>

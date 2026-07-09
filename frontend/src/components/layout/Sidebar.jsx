@@ -1,4 +1,5 @@
 import React from "react";
+import logoUrl from '../../assets/logo.png';
 
 const navItems = [
   {
@@ -190,12 +191,12 @@ export default function Sidebar({ currentPage, setCurrentPage, user }) {
   return (
     <aside className="hidden md:flex flex-col w-64 h-screen bg-white border-r border-gray-200 fixed left-0 top-0 z-20">
       <div className="p-6 flex items-center gap-3">
-        <div
-          className="w-8 h-8 rounded-full bg-brand-orange text-white flex items-center justify-center font-bold text-lg cursor-pointer"
+        <img
+          src={logoUrl}
+          alt="KitPup Logo"
+          className="w-8 h-8 rounded-lg object-contain cursor-pointer"
           onClick={() => setCurrentPage("dashboard")}
-        >
-          K
-        </div>
+        />
         <h1
           className="text-2xl font-bold text-brand-orange cursor-pointer"
           onClick={() => setCurrentPage("dashboard")}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import logoUrl from '../../assets/logo.png';
 
 export default function Header({ currentPage, user, onLogout, setCurrentPage }) {
   const [showMenu, setShowMenu] = useState(false);
@@ -134,9 +135,7 @@ export default function Header({ currentPage, user, onLogout, setCurrentPage }) 
     <>
       <header className="h-16 md:h-20 backdrop-blur-md bg-white/80 border-b border-gray-200 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40 w-full">
         <div className="flex items-center gap-3 md:hidden">
-          <div className="w-8 h-8 rounded-full bg-brand-orange text-white flex items-center justify-center font-bold">
-            K
-          </div>
+          <img src={logoUrl} alt="KitPup Logo" className="w-8 h-8 rounded-lg object-contain" />
           <h1 className="text-xl font-bold text-brand-orange">KitPup</h1>
         </div>
         
