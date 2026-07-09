@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Platform, Image } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { API_URL } from '../../api/config';
@@ -21,6 +22,7 @@ export default function Register({ navigation, setUser }) {
         const res = await axios.post(`${API_URL}/api/v1/users/register`, { name, email, password });
         if (res.data.success) {
           const { token, user } = res.data;
+          await AsyncStorage.setItem('kitpup_user', JSON.stringify({ ...user, token }));
           setUser({ ...user, token });
         }
       } catch (err) {
@@ -35,8 +37,8 @@ export default function Register({ navigation, setUser }) {
     <View className="flex-1 bg-gray-50">
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16, paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
         <View className="mb-6 items-center">
-          <View className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center mb-3 shadow-sm">
-            <Text className="text-white font-bold text-2xl">K</Text>
+          <View className="w-16 h-16 rounded-xl bg-orange-500 overflow-hidden mb-3 shadow-sm border border-orange-100">
+            <Image source={require('../../../assets/logo.png')} className="w-full h-full" resizeMode="contain" />
           </View>
           <Text className="text-3xl font-bold text-orange-500">KitPup</Text>
         </View>

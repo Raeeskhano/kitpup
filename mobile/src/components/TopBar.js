@@ -1,20 +1,53 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Platform, Image, Alert } from 'react-native';
-import { Bell, ArrowLeft } from 'lucide-react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, SafeAreaView, Platform, Image, Alert, DeviceEventEmitter } from 'react-native';
+import { Bell, ArrowLeft, ShoppingCart } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { API_URL } from '../api/config';
 
-export default function TopBar({ title, back, navigation }) {
-  const [user, setUser] = useState(null);
+export default function TopBar({ title, back, navigation, user: globalUser }) {
+  const [user, setUser] = useState(globalUser);
+  const [cartCount, setCartCount] = useState(0);
+
+  const fetchCart = useCallback(async () => {
+    try {
+      const stored = await AsyncStorage.getItem('kitpup_user');
+      if (stored) {
+        const token = JSON.parse(stored).token;
+        if (token) {
+          const res = await axios.get(`${API_URL}/api/v1/products/cart`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const count = res.data.data.reduce((sum, item) => sum + item.quantity, 0);
+          setCartCount(count);
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const stored = await AsyncStorage.getItem('kitpup_user');
-        if (stored) setUser(JSON.parse(stored));
-      } catch (e) {}
+    if (globalUser) {
+      setUser(globalUser);
+    } else {
+      const loadUser = async () => {
+        try {
+          const stored = await AsyncStorage.getItem('kitpup_user');
+          if (stored) setUser(JSON.parse(stored));
+        } catch (e) {}
+      };
+      loadUser();
+    }
+  }, [globalUser]);
+
+  useEffect(() => {
+    fetchCart();
+    const sub = DeviceEventEmitter.addListener('cartUpdated', fetchCart);
+    return () => {
+      if (sub) sub.remove();
     };
-    loadUser();
-  }, []);
+  }, [fetchCart]);
 
   const getInitials = (name) => {
     if (!name) return 'KP';
@@ -38,6 +71,17 @@ export default function TopBar({ title, back, navigation }) {
 
         <View className="flex-row items-center ml-4">
           <TouchableOpacity 
+            onPress={() => navigation.navigate('Cart')}
+            className="relative p-2 mr-1 bg-gray-50 rounded-full"
+          >
+            <ShoppingCart color="#6b7280" size={20} />
+            {cartCount > 0 && (
+              <View className="absolute top-0 right-0 bg-red-500 rounded-full w-4 h-4 items-center justify-center border border-white">
+                <Text className="text-white font-bold" style={{ fontSize: 9 }}>{cartCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity 
             onPress={() => Alert.alert('Notifications', 'You have no new notifications.')}
             className="relative p-2 mr-3 bg-gray-50 rounded-full"
           >
@@ -48,9 +92,13 @@ export default function TopBar({ title, back, navigation }) {
           {user && (
             <TouchableOpacity 
               onPress={() => navigation.navigate('Profile')}
-              className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center shadow-sm"
+              className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center shadow-sm overflow-hidden border border-orange-100"
             >
-              <Text className="text-white font-bold text-xs">{getInitials(user.name)}</Text>
+              {user.avatar && !user.avatar.includes('ui-avatars') ? (
+                <Image source={{ uri: user.avatar }} className="w-full h-full" />
+              ) : (
+                <Text className="text-white font-bold text-xs">{getInitials(user.name)}</Text>
+              )}
             </TouchableOpacity>
           )}
         </View>

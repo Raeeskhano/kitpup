@@ -13,7 +13,9 @@ const {
   checkout,
   getMyProducts,
   updateMyProduct,
-  deleteMyProduct
+  deleteMyProduct,
+  getProductReviews,
+  addReview
 } = require('../controllers/productController');
 
 const { requireAuth } = require('../middlewares/auth');
@@ -52,5 +54,10 @@ router
   .get(getProduct)
   .put(requireAuth, updateProduct)
   .delete(requireAuth, deleteProduct);
+
+router
+  .route('/:id/reviews')
+  .get(getProductReviews)
+  .post(requireAuth, addReview);
 
 module.exports = router;

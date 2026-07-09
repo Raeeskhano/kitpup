@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { API_URL } from '../api/config';
 import { X, Plus, Image as ImageIcon, Box, Heart, AlertTriangle, CheckCircle, Clock, User } from 'lucide-react-native';
 
-export default function Profile() {
+export default function Profile({ user: globalUser, setUser: setGlobalUser }) {
   const [user, setUser] = useState(null);
   const [pets, setPets] = useState([]);
   const [products, setProducts] = useState([]);
@@ -113,6 +113,7 @@ export default function Profile() {
         parsed.name = res.data.data.name;
         parsed.avatar = res.data.data.avatar;
         await AsyncStorage.setItem('kitpup_user', JSON.stringify(parsed));
+        if (setGlobalUser) setGlobalUser(parsed);
       }
 
       setActiveModal(null);
@@ -286,7 +287,18 @@ export default function Profile() {
                 <View className="flex-1"><Text className="text-xs font-bold text-gray-600 mb-1">SPECIES</Text><TextInput value={petForm.species} onChangeText={t => setPetForm({...petForm, species: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="Dog" /></View>
                 <View className="flex-1"><Text className="text-xs font-bold text-gray-600 mb-1">BREED</Text><TextInput value={petForm.breed} onChangeText={t => setPetForm({...petForm, breed: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="Golden Retriever" /></View>
               </View>
-              <View><Text className="text-xs font-bold text-gray-600 mb-1">AGE</Text><TextInput value={petForm.age} onChangeText={t => setPetForm({...petForm, age: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="2 Years" /></View>
+              <View className="flex-row gap-4">
+                <View className="flex-1"><Text className="text-xs font-bold text-gray-600 mb-1">AGE</Text><TextInput value={petForm.age} onChangeText={t => setPetForm({...petForm, age: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="2 Years" /></View>
+                <View className="flex-1"><Text className="text-xs font-bold text-gray-600 mb-1">WEIGHT</Text><TextInput value={petForm.weight} onChangeText={t => setPetForm({...petForm, weight: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="10kg" /></View>
+              </View>
+              <View className="flex-row gap-4">
+                <View className="flex-1"><Text className="text-xs font-bold text-gray-600 mb-1">PHONE NUMBER</Text><TextInput keyboardType="phone-pad" value={petForm.contactNumber} onChangeText={t => setPetForm({...petForm, contactNumber: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="03001234567" /></View>
+                <View className="flex-1"><Text className="text-xs font-bold text-gray-600 mb-1">WHATSAPP</Text><TextInput keyboardType="phone-pad" value={petForm.whatsappNumber} onChangeText={t => setPetForm({...petForm, whatsappNumber: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="03001234567" /></View>
+              </View>
+              <View className="flex-row gap-4">
+                <View className="flex-1"><Text className="text-xs font-bold text-gray-600 mb-1">LOCATION</Text><TextInput value={petForm.location} onChangeText={t => setPetForm({...petForm, location: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="New York, NY" /></View>
+                <View className="flex-1"><Text className="text-xs font-bold text-gray-600 mb-1">ADOPTION FEE</Text><TextInput keyboardType="numeric" value={petForm.fee} onChangeText={t => setPetForm({...petForm, fee: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="Free or 50" /></View>
+              </View>
               <View><Text className="text-xs font-bold text-gray-600 mb-1">DESCRIPTION</Text><TextInput multiline numberOfLines={3} textAlignVertical="top" value={petForm.description} onChangeText={t => setPetForm({...petForm, description: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="A friendly dog..." /></View>
               <TouchableOpacity onPress={handleSavePet} className="w-full bg-orange-500 py-4 rounded-xl mt-4 items-center mb-10"><Text className="text-white font-bold">Add Pet</Text></TouchableOpacity>
             </ScrollView>

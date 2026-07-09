@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, ActivityIndicator, Alert, Dimensions, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, ActivityIndicator, Alert, Dimensions, KeyboardAvoidingView, Platform, DeviceEventEmitter } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -24,6 +24,13 @@ export default function PetShop() {
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState(null);
+  
+  // Reviews State
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewComment, setNewReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   const categories = ['All', 'Food & Treats', 'Apparel', 'Toys', 'Grooming', 'Beds & Crates'];
 
@@ -43,6 +50,64 @@ export default function PetShop() {
     fetchProducts();
   }, [category]);
 
+  useEffect(() => {
+    if (detailProduct) {
+      fetchReviews(detailProduct._id);
+    }
+  }, [detailProduct]);
+
+  const fetchReviews = async (productId) => {
+    try {
+      setReviewsLoading(true);
+      const res = await axios.get(`${API_URL}/api/v1/products/${productId}/reviews`);
+      setReviews(res.data.data);
+    } catch (err) {
+      console.error('Failed to load reviews', err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const submitReview = async () => {
+    if (!newReviewComment.trim()) {
+      Alert.alert('Error', 'Please enter a comment.');
+      return;
+    }
+    try {
+      setSubmittingReview(true);
+      const storedUser = await AsyncStorage.getItem('kitpup_user');
+      let token = '';
+      if (storedUser) {
+        token = JSON.parse(storedUser).token || '';
+      } else {
+        Alert.alert('Login Required', 'Please login to submit a review.');
+        return;
+      }
+
+      await axios.post(`${API_URL}/api/v1/products/${detailProduct._id}/reviews`, {
+        rating: newReviewRating,
+        comment: newReviewComment
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setNewReviewComment('');
+      setNewReviewRating(5);
+      fetchReviews(detailProduct._id);
+      fetchProducts(); // Refresh product data to update average rating
+      Alert.alert('Success', 'Review submitted successfully!');
+    } catch (err) {
+      console.error(err);
+      if (err.response && err.response.data && err.response.data.error) {
+        Alert.alert('Error', err.response.data.error);
+      } else {
+        Alert.alert('Error', 'Failed to submit review.');
+      }
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   const handleAddToCart = async (productId) => {
     try {
       setAddingToCartId(productId);
@@ -59,7 +124,7 @@ export default function PetShop() {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+      DeviceEventEmitter.emit('cartUpdated');
       Alert.alert('Success', 'Added to cart');
     } catch (err) {
       console.error('Failed to add to cart', err);
@@ -279,6 +344,79 @@ export default function PetShop() {
                 <Text className={`font-medium ${detailProduct.stock > 0 ? 'text-gray-500' : 'text-red-500'}`}>
                   {detailProduct.stock > 0 ? `${detailProduct.stock} in stock` : 'Out of Stock'}
                 </Text>
+                
+                {/* Reviews Section */}
+                <View className="mt-8">
+                  <Text className="text-lg font-bold text-gray-800 mb-4">Reviews</Text>
+                  
+                  {/* Review List */}
+                  {reviewsLoading ? (
+                    <ActivityIndicator size="small" color="#f97316" />
+                  ) : reviews.length === 0 ? (
+                    <Text className="text-gray-500 italic mb-6">No reviews yet. Be the first to review!</Text>
+                  ) : (
+                    <View className="mb-6">
+                      {reviews.map((review, idx) => (
+                        <View key={idx} className="bg-gray-50 p-4 rounded-xl mb-3 border border-gray-100">
+                          <View className="flex-row items-center justify-between mb-2">
+                            <View className="flex-row items-center">
+                              <View className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden mr-2">
+                                {review.user?.avatar ? (
+                                  <Image source={{ uri: review.user.avatar }} className="w-full h-full" />
+                                ) : (
+                                  <View className="w-full h-full items-center justify-center bg-orange-500">
+                                    <Text className="text-white text-[10px] font-bold">
+                                      {review.user?.name ? review.user.name.substring(0, 2).toUpperCase() : 'U'}
+                                    </Text>
+                                  </View>
+                                )}
+                              </View>
+                              <Text className="font-bold text-gray-800">{review.user?.name || 'User'}</Text>
+                            </View>
+                            {renderStars(review.rating)}
+                          </View>
+                          <Text className="text-gray-600">{review.comment}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Write a Review Form */}
+                  <View className="bg-white p-4 rounded-xl border border-gray-200">
+                    <Text className="font-bold text-gray-800 mb-2">Write a Review</Text>
+                    <View className="flex-row items-center mb-3">
+                      <Text className="text-sm text-gray-600 mr-2">Rating:</Text>
+                      <View className="flex-row">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <TouchableOpacity key={star} onPress={() => setNewReviewRating(star)}>
+                            <Star size={24} color={star <= newReviewRating ? "#facc15" : "#d1d5db"} fill={star <= newReviewRating ? "#facc15" : "transparent"} />
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                    <TextInput
+                      value={newReviewComment}
+                      onChangeText={setNewReviewComment}
+                      placeholder="Share your thoughts about this product..."
+                      multiline
+                      numberOfLines={3}
+                      textAlignVertical="top"
+                      className="border border-gray-200 rounded-lg p-3 text-base text-gray-800 bg-gray-50 mb-3"
+                    />
+                    <TouchableOpacity
+                      onPress={submitReview}
+                      disabled={submittingReview}
+                      className={`py-3 rounded-lg items-center ${submittingReview ? 'bg-orange-300' : 'bg-orange-500'}`}
+                    >
+                      {submittingReview ? (
+                        <ActivityIndicator color="white" size="small" />
+                      ) : (
+                        <Text className="text-white font-bold">Submit Review</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
               </View>
             </ScrollView>
             

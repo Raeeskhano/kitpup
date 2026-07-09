@@ -22,12 +22,13 @@ import AIChat from './src/pages/AIChat';
 import VetLocator from './src/pages/VetLocator';
 import Profile from './src/pages/Profile';
 import Settings from './src/pages/Settings';
+import Cart from './src/pages/Cart';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // Bottom Tab Navigator for main authenticated routes
-function MainTabs({ setUser }) {
+function MainTabs({ user, setUser }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -44,7 +45,7 @@ function MainTabs({ setUser }) {
         tabBarInactiveTintColor: 'gray',
         header: ({ navigation, route, options }) => {
           const title = options.title !== undefined ? options.title : route.name;
-          return <TopBar title={title} navigation={navigation} />;
+          return <TopBar title={title} navigation={navigation} user={user} />;
         },
       })}
     >
@@ -53,7 +54,9 @@ function MainTabs({ setUser }) {
       <Tab.Screen name="Shop" component={PetShop} options={{ title: 'Pet Shop' }} />
       <Tab.Screen name="Maps" component={VetLocator} options={{ title: 'Nearby Clinics' }} />
       <Tab.Screen name="AIChat" component={AIChat} options={{ title: 'KitPup AI' }} />
-      <Tab.Screen name="Profile" component={Profile} options={{ title: 'My Profile' }} />
+      <Tab.Screen name="Profile" options={{ title: 'My Profile' }}>
+        {(props) => <Profile {...props} user={user} setUser={setUser} />}
+      </Tab.Screen>
       <Tab.Screen name="Settings" options={{ title: 'Settings' }}>
         {(props) => <Settings {...props} setUser={setUser} />}
       </Tab.Screen>
@@ -114,9 +117,10 @@ export default function App() {
           // App Stack
           <Stack.Group>
             <Stack.Screen name="Main" options={{ headerShown: false }}>
-              {(props) => <MainTabs {...props} setUser={setUser} />}
+              {(props) => <MainTabs {...props} user={user} setUser={setUser} />}
             </Stack.Screen>
             <Stack.Screen name="Marketplace" component={Marketplace} options={{ title: 'Marketplace' }} />
+            <Stack.Screen name="Cart" component={Cart} options={{ title: 'Shopping Cart' }} />
             <Stack.Screen name="RescueReport" component={RescueReport} options={{ title: 'Rescue & Report' }} />
             <Stack.Screen name="LostFound" component={LostFound} options={{ title: 'Lost & Found' }} />
           </Stack.Group>

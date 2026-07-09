@@ -212,8 +212,8 @@ export default function Marketplace() {
             {/* Contact Bottom Bar */}
             <View className="p-4 bg-white border-t border-gray-100 flex-row gap-4">
               <TouchableOpacity 
-                onPress={() => openPhone(selectedPet.owner?.contactNumber)}
-                disabled={!selectedPet.owner?.contactNumber}
+                onPress={() => openPhone(selectedPet.contactNumber || selectedPet.owner?.contactNumber)}
+                disabled={!(selectedPet.contactNumber || selectedPet.owner?.contactNumber)}
                 className="flex-1 flex-row items-center justify-center py-4 bg-gray-100 rounded-xl"
               >
                 <Phone color="black" size={20} className="mr-2" />
@@ -221,8 +221,8 @@ export default function Marketplace() {
               </TouchableOpacity>
               
               <TouchableOpacity 
-                onPress={() => openWhatsApp(selectedPet.owner?.whatsappNumber)}
-                disabled={!selectedPet.owner?.whatsappNumber}
+                onPress={() => openWhatsApp(selectedPet.whatsappNumber || selectedPet.owner?.whatsappNumber)}
+                disabled={!(selectedPet.whatsappNumber || selectedPet.owner?.whatsappNumber)}
                 className="flex-1 flex-row items-center justify-center py-4 bg-[#25D366] rounded-xl"
               >
                 <MessageCircle color="white" size={20} className="mr-2" />

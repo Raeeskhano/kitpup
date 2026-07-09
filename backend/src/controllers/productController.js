@@ -1,5 +1,6 @@
 const Product = require('../models/Product');
 const User = require('../models/User');
+const Review = require('../models/Review');
 
 // @desc    Get all products
 // @route   GET /api/v1/products
@@ -244,6 +245,44 @@ exports.deleteMyProduct = async (req, res, next) => {
     await product.deleteOne();
     res.status(200).json({ success: true, data: {} });
   } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Get reviews for a product
+// @route   GET /api/v1/products/:id/reviews
+// @access  Public
+exports.getProductReviews = async (req, res, next) => {
+  try {
+    const reviews = await Review.find({ product: req.params.id }).populate('user', 'name avatar');
+    res.status(200).json({ success: true, count: reviews.length, data: reviews });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Add review to product
+// @route   POST /api/v1/products/:id/reviews
+// @access  Private
+exports.addReview = async (req, res, next) => {
+  try {
+    req.body.product = req.params.id;
+    req.body.user = req.user.id;
+
+    // Check if product exists
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ success: false, error: 'Product not found' });
+    }
+
+    const review = await Review.create(req.body);
+    
+    res.status(201).json({ success: true, data: review });
+  } catch (error) {
+    // If user already submitted a review
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, error: 'You have already reviewed this product' });
+    }
     res.status(400).json({ success: false, error: error.message });
   }
 };
