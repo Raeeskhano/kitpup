@@ -1,4 +1,5 @@
 const express = require('express');
+const { upload } = require('../config/cloudinary');
 const {
   getUsers,
   getUser,
@@ -28,7 +29,7 @@ router
 router
   .route('/me')
   .get(requireAuth, getMe)
-  .patch(requireAuth, updateMe);
+  .patch(requireAuth, upload.single('avatar'), updateMe);
 
 router.get('/me/activity', requireAuth, getActivity);
 router.patch('/me/password', requireAuth, updatePassword);
