@@ -15,6 +15,8 @@ export default function RescueReport() {
   const [locationName, setLocationName] = useState('');
   const [mapPosition, setMapPosition] = useState({ lat: 34.1495, lng: 73.2115 });
   const [description, setDescription] = useState('');
+  const [contactNumber, setContactNumber] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [recentReports, setRecentReports] = useState([]);
@@ -128,6 +130,8 @@ export default function RescueReport() {
       formData.append('urgencyLevel', urgencyLevel);
       formData.append('location', locationName);
       formData.append('description', description);
+      if (contactNumber) formData.append('contactNumber', contactNumber);
+      if (whatsappNumber) formData.append('whatsappNumber', whatsappNumber);
       
       photoUris.forEach(uri => {
         const filename = uri.split('/').pop();
@@ -149,6 +153,8 @@ export default function RescueReport() {
       setUrgencyLevel('High - Immediate Danger');
       setLocationName('');
       setDescription('');
+      setContactNumber('');
+      setWhatsappNumber('');
       fetchRecentReports();
       
     } catch (err) {
@@ -282,6 +288,28 @@ export default function RescueReport() {
           >
             <Text className="text-gray-800">{urgencyLevel || 'Select Urgency...'}</Text>
           </TouchableOpacity>
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-sm font-bold text-gray-800 mb-2">Contact Number</Text>
+          <TextInput 
+            value={contactNumber}
+            onChangeText={setContactNumber}
+            placeholder="Your phone number..."
+            keyboardType="phone-pad"
+            className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white"
+          />
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-sm font-bold text-gray-800 mb-2">WhatsApp Number</Text>
+          <TextInput 
+            value={whatsappNumber}
+            onChangeText={setWhatsappNumber}
+            placeholder="Include country code, e.g. +92..."
+            keyboardType="phone-pad"
+            className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white"
+          />
         </View>
 
         <View className="mb-8">

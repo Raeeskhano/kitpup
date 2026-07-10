@@ -61,6 +61,8 @@ export default function Dashboard({ setCurrentPage }) {
   });
   
   const [activityFeed, setActivityFeed] = useState([]);
+  const [selectedActivity, setSelectedActivity] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -362,11 +364,8 @@ export default function Dashboard({ setCurrentPage }) {
                   <div 
                     key={index} 
                     onClick={() => {
-                      if (setCurrentPage) {
-                        const pageRoute = details.route.replace(/[\/\-]/g, '');
-                        setCurrentPage(pageRoute);
-                      }
-                      navigate(details.route);
+                      setSelectedActivity(item);
+                      setIsModalOpen(true);
                     }}
                     className={`flex items-start gap-4 p-3 rounded-xl cursor-pointer ${details.wrapperClass} border ${details.wrapperClass.includes('border-') ? '' : 'border-transparent'}`}
                   >
@@ -413,6 +412,64 @@ export default function Dashboard({ setCurrentPage }) {
         </div>
 
       </div>
+
+      {/* Activity Details Modal */}
+      {isModalOpen && selectedActivity && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-xl relative animate-fadeIn">
+            <button 
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Activity Details</h2>
+            <div className="space-y-4">
+              <div>
+                <span className="text-sm text-gray-500 font-bold uppercase">Type</span>
+                <p className="text-lg font-bold">{selectedActivity.feedType === 'report' ? 'Rescue Report' : 'Lost Pet Alert'}</p>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500 font-bold uppercase">Animal</span>
+                <p className="text-lg font-bold">{selectedActivity.animalType || selectedActivity.species || selectedActivity.name || 'Unknown'}</p>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500 font-bold uppercase">Location</span>
+                <p className="text-gray-800">{selectedActivity.location || 'Unknown'}</p>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500 font-bold uppercase">Description</span>
+                <p className="text-gray-800">{selectedActivity.description || 'No description provided.'}</p>
+              </div>
+              
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <h3 className="font-bold text-gray-800 mb-3">Contact Information</h3>
+                {(selectedActivity.contactNumber || selectedActivity.owner?.contactNumber || selectedActivity.reporter?.contactNumber) && (
+                  <a href={`tel:${selectedActivity.contactNumber || selectedActivity.owner?.contactNumber || selectedActivity.reporter?.contactNumber}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl mb-2 hover:bg-green-50 transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
+                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                    </div>
+                    <span className="font-bold text-gray-800">{selectedActivity.contactNumber || selectedActivity.owner?.contactNumber || selectedActivity.reporter?.contactNumber}</span>
+                  </a>
+                )}
+                
+                {(selectedActivity.whatsappNumber || selectedActivity.owner?.whatsappNumber || selectedActivity.reporter?.whatsappNumber) && (
+                  <a href={`https://wa.me/${(selectedActivity.whatsappNumber || selectedActivity.owner?.whatsappNumber || selectedActivity.reporter?.whatsappNumber).replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-green-50 rounded-xl mb-2 hover:bg-green-100 transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    </div>
+                    <span className="font-bold text-green-800">{selectedActivity.whatsappNumber || selectedActivity.owner?.whatsappNumber || selectedActivity.reporter?.whatsappNumber}</span>
+                  </a>
+                )}
+                
+                {(!selectedActivity.contactNumber && !selectedActivity.owner?.contactNumber && !selectedActivity.reporter?.contactNumber && !selectedActivity.whatsappNumber && !selectedActivity.owner?.whatsappNumber && !selectedActivity.reporter?.whatsappNumber) && (
+                  <p className="text-gray-500 text-sm">No contact information provided.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

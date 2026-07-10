@@ -3,8 +3,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ActivityIndicator, View } from 'react-native';
-import { Home, ShoppingBag, MapPin, MessageCircle, User, Search, Settings as SettingsIcon } from 'lucide-react-native';
+import { ActivityIndicator, View, ScrollView, TouchableOpacity, Text, Platform } from 'react-native';
+import { Home, ShoppingBag, MapPin, MessageCircle, User, Search, Settings as SettingsIcon, AlertTriangle, Compass } from 'lucide-react-native';
 
 // Placeholder imports for pages
 import Login from './src/pages/auth/Login';
@@ -27,22 +27,70 @@ import Cart from './src/pages/Cart';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// Custom Horizontally Scrollable Tab Bar
+function CustomTabBar({ state, descriptors, navigation }) {
+  return (
+    <View className="bg-white border-t border-gray-200" style={{ paddingBottom: Platform.OS === 'ios' ? 24 : 12, paddingTop: 12 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 24 }}>
+        {state.routes.map((route, index) => {
+          const { options } = descriptors[route.key];
+          const label = options.tabBarLabel !== undefined
+            ? options.tabBarLabel
+            : options.title !== undefined
+            ? options.title
+            : route.name;
+
+          const isFocused = state.index === index;
+
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
+
+          const color = isFocused ? '#3b82f6' : 'gray';
+
+          return (
+            <TouchableOpacity
+              key={route.key}
+              onPress={onPress}
+              className="items-center justify-center min-w-[50px]"
+            >
+              {options.tabBarIcon && options.tabBarIcon({ color, size: 24 })}
+              <Text style={{ color, fontSize: 10, marginTop: 6, fontWeight: isFocused ? 'bold' : 'normal' }}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
 // Bottom Tab Navigator for main authenticated routes
 function MainTabs({ user, setUser }) {
   return (
     <Tab.Navigator
+      tabBar={props => <CustomTabBar {...props} />}
       screenOptions={({ route }) => ({
         tabBarIcon: ({ color, size }) => {
           if (route.name === 'Dashboard') return <Home color={color} size={size} />;
           if (route.name === 'Marketplace') return <Search color={color} size={size} />;
           if (route.name === 'Shop') return <ShoppingBag color={color} size={size} />;
+          if (route.name === 'Rescue') return <AlertTriangle color={color} size={size} />;
+          if (route.name === 'LostFound') return <Compass color={color} size={size} />;
           if (route.name === 'Maps') return <MapPin color={color} size={size} />;
           if (route.name === 'AIChat') return <MessageCircle color={color} size={size} />;
           if (route.name === 'Profile') return <User color={color} size={size} />;
           if (route.name === 'Settings') return <SettingsIcon color={color} size={size} />;
         },
-        tabBarActiveTintColor: '#3b82f6', // blue-500
-        tabBarInactiveTintColor: 'gray',
         header: ({ navigation, route, options }) => {
           const title = options.title !== undefined ? options.title : route.name;
           return <TopBar title={title} navigation={navigation} user={user} />;
@@ -52,6 +100,8 @@ function MainTabs({ user, setUser }) {
       <Tab.Screen name="Dashboard" component={Dashboard} options={{ title: 'Dashboard' }} />
       <Tab.Screen name="Marketplace" component={Marketplace} options={{ title: 'Marketplace' }} />
       <Tab.Screen name="Shop" component={PetShop} options={{ title: 'Pet Shop' }} />
+      <Tab.Screen name="Rescue" component={RescueReport} options={{ title: 'Rescue' }} />
+      <Tab.Screen name="LostFound" component={LostFound} options={{ title: 'Lost/Found' }} />
       <Tab.Screen name="Maps" component={VetLocator} options={{ title: 'Nearby Clinics' }} />
       <Tab.Screen name="AIChat" component={AIChat} options={{ title: 'KitPup AI' }} />
       <Tab.Screen name="Profile" options={{ title: 'My Profile' }}>

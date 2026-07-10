@@ -8,6 +8,8 @@ import { API_URL } from '../api/config';
 export default function TopBar({ title, back, navigation, user: globalUser }) {
   const [user, setUser] = useState(globalUser);
   const [cartCount, setCartCount] = useState(0);
+  const [hasNotifications, setHasNotifications] = useState(false);
+  const [latestAlert, setLatestAlert] = useState(null);
 
   const fetchCart = useCallback(async () => {
     try {
@@ -27,6 +29,42 @@ export default function TopBar({ title, back, navigation, user: globalUser }) {
     }
   }, []);
 
+  const fetchLatestAlert = useCallback(async () => {
+    try {
+      const stored = await AsyncStorage.getItem('kitpup_user');
+      if (stored) {
+        const token = JSON.parse(stored).token;
+        if (token) {
+          const config = { headers: { Authorization: `Bearer ${token}` } };
+          const [reportRes, petRes] = await Promise.all([
+            axios.get(`${API_URL}/api/v1/reports?limit=1`, config),
+            axios.get(`${API_URL}/api/v1/pets?status=lost&limit=1`, config)
+          ]);
+
+          const latestReport = reportRes.data.data?.[0];
+          const latestPet = petRes.data.data?.[0];
+          
+          let latest = null;
+          if (latestReport && latestPet) {
+            latest = new Date(latestReport.createdAt) > new Date(latestPet.createdAt) ? latestReport : latestPet;
+          } else {
+            latest = latestReport || latestPet;
+          }
+          
+          if (latest) {
+            const lastViewed = await AsyncStorage.getItem('last_viewed_notification');
+            if (!lastViewed || new Date(latest.createdAt) > new Date(lastViewed)) {
+              setHasNotifications(true);
+              setLatestAlert(latest);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.log('Failed to fetch notifications', err);
+    }
+  }, []);
+
   useEffect(() => {
     if (globalUser) {
       setUser(globalUser);
@@ -43,11 +81,27 @@ export default function TopBar({ title, back, navigation, user: globalUser }) {
 
   useEffect(() => {
     fetchCart();
+    fetchLatestAlert();
     const sub = DeviceEventEmitter.addListener('cartUpdated', fetchCart);
+    const interval = setInterval(fetchLatestAlert, 30000); // Check every 30s
     return () => {
       if (sub) sub.remove();
+      clearInterval(interval);
     };
-  }, [fetchCart]);
+  }, [fetchCart, fetchLatestAlert]);
+
+  const handleBellPress = async () => {
+    if (latestAlert) {
+      await AsyncStorage.setItem('last_viewed_notification', new Date().toISOString());
+      setHasNotifications(false);
+      const isReport = !!latestAlert.animalType;
+      const typeStr = isReport ? 'Rescue Report' : 'Lost Pet Alert';
+      const animalStr = latestAlert.animalType || latestAlert.species || 'Animal';
+      Alert.alert(`New ${typeStr}`, `${animalStr} near ${latestAlert.location || 'Unknown'}\n\n${latestAlert.description || ''}`);
+    } else {
+      Alert.alert('Notifications', 'You have no new notifications.');
+    }
+  };
 
   const getInitials = (name) => {
     if (!name) return 'KP';
@@ -82,11 +136,13 @@ export default function TopBar({ title, back, navigation, user: globalUser }) {
             )}
           </TouchableOpacity>
           <TouchableOpacity 
-            onPress={() => Alert.alert('Notifications', 'You have no new notifications.')}
+            onPress={handleBellPress}
             className="relative p-2 mr-3 bg-gray-50 rounded-full"
           >
             <Bell color="#6b7280" size={20} />
-            <View className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
+            {hasNotifications && (
+              <View className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
+            )}
           </TouchableOpacity>
           
           {user && (

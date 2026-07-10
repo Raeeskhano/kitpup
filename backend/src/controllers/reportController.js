@@ -18,6 +18,8 @@ exports.getReports = async (req, res, next) => {
       query = query.limit(parseInt(limit, 10));
     }
     
+    query = query.populate('reporter', 'name email contactNumber whatsappNumber');
+    
     const reports = await query;
     res.status(200).json({ success: true, count: reports.length, data: reports });
   } catch (error) {
@@ -30,7 +32,7 @@ exports.getReports = async (req, res, next) => {
 // @access  Private
 exports.getReport = async (req, res, next) => {
   try {
-    const report = await Report.findById(req.params.id);
+    const report = await Report.findById(req.params.id).populate('reporter', 'name email contactNumber whatsappNumber');
     if (!report) {
       return res.status(404).json({ success: false, error: 'Report not found' });
     }

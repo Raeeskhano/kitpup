@@ -40,7 +40,7 @@ export default function LostFound() {
 
   const [filters, setFilters] = useState({ species: 'All', time: 'All time', distance: 'Any' });
   const [formData, setFormData] = useState({
-    name: '', species: 'Dog', breed: '', location: '', lastSeenDate: '', description: ''
+    name: '', species: 'Dog', breed: '', location: '', lastSeenDate: '', description: '', contactNumber: '', whatsappNumber: ''
   });
   const [photoFile, setPhotoFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,7 +87,11 @@ export default function LostFound() {
     setIsSubmitting(true);
     try {
       const data = new FormData();
-      Object.keys(formData).forEach(key => data.append(key, formData[key]));
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== '') {
+          data.append(key, formData[key]);
+        }
+      });
       data.append('status', 'lost');
       if (photoFile) data.append('photos', photoFile);
 
@@ -99,7 +103,7 @@ export default function LostFound() {
       });
       
       setIsReportOpen(false);
-      setFormData({ name: '', species: 'Dog', breed: '', location: '', lastSeenDate: '', description: '' });
+      setFormData({ name: '', species: 'Dog', breed: '', location: '', lastSeenDate: '', description: '', contactNumber: '', whatsappNumber: '' });
       setPhotoFile(null);
       setToastMsg('Alert posted! Community has been notified.');
       
@@ -110,7 +114,8 @@ export default function LostFound() {
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to report pet. Please try again.');
+      const errorMsg = err.response?.data?.error || err.message || 'Unknown error';
+      alert(`Failed to report pet: ${errorMsg}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -384,6 +389,17 @@ export default function LostFound() {
                 <input required type="datetime-local" value={formData.lastSeenDate} onChange={e => setFormData({...formData, lastSeenDate: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#f97316] outline-none bg-white text-gray-700" />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Contact Number</label>
+                  <input type="tel" value={formData.contactNumber} onChange={e => setFormData({...formData, contactNumber: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#f97316] outline-none" placeholder="Your phone number..." />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">WhatsApp Number</label>
+                  <input type="tel" value={formData.whatsappNumber} onChange={e => setFormData({...formData, whatsappNumber: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#f97316] outline-none" placeholder="+92..." />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
                 <textarea required rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#f97316] outline-none resize-none" placeholder="Distinctive markings, collar color, behavior..."></textarea>
@@ -449,31 +465,31 @@ export default function LostFound() {
                 </a>
               )}
 
-              {selectedPet.owner?.contactNumber && (
-                <a href={`tel:${selectedPet.owner.contactNumber}`} className="block p-4 bg-gray-50 hover:bg-green-50 transition-colors rounded-xl border border-gray-100 flex items-center gap-4 group">
+              {(selectedPet.owner?.contactNumber || selectedPet.contactNumber) && (
+                <a href={`tel:${selectedPet.contactNumber || selectedPet.owner.contactNumber}`} className="block p-4 bg-gray-50 hover:bg-green-50 transition-colors rounded-xl border border-gray-100 flex items-center gap-4 group">
                   <div className="w-10 h-10 rounded-full bg-white border border-gray-200 group-hover:border-green-200 flex items-center justify-center text-gray-500 group-hover:text-green-600">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">Phone</div>
-                    <div className="text-gray-800 font-bold">{selectedPet.owner.contactNumber}</div>
+                    <div className="text-gray-800 font-bold">{selectedPet.contactNumber || selectedPet.owner.contactNumber}</div>
                   </div>
                 </a>
               )}
 
-              {selectedPet.owner?.whatsappNumber && (
-                <a href={`https://wa.me/${selectedPet.owner.whatsappNumber.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="block p-4 bg-gray-50 hover:bg-green-50 transition-colors rounded-xl border border-gray-100 flex items-center gap-4 group">
+              {(selectedPet.owner?.whatsappNumber || selectedPet.whatsappNumber) && (
+                <a href={`https://wa.me/${(selectedPet.whatsappNumber || selectedPet.owner.whatsappNumber).replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="block p-4 bg-gray-50 hover:bg-green-50 transition-colors rounded-xl border border-gray-100 flex items-center gap-4 group">
                   <div className="w-10 h-10 rounded-full bg-white border border-gray-200 group-hover:border-green-200 flex items-center justify-center text-gray-500 group-hover:text-green-600">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">WhatsApp</div>
-                    <div className="text-gray-800 font-bold">{selectedPet.owner.whatsappNumber}</div>
+                    <div className="text-gray-800 font-bold">{selectedPet.whatsappNumber || selectedPet.owner.whatsappNumber}</div>
                   </div>
                 </a>
               )}
 
-              {(!selectedPet.owner?.email && !selectedPet.owner?.contactNumber && !selectedPet.owner?.whatsappNumber) && (
+              {(!selectedPet.owner?.email && !selectedPet.owner?.contactNumber && !selectedPet.contactNumber && !selectedPet.owner?.whatsappNumber && !selectedPet.whatsappNumber) && (
                 <div className="p-4 bg-orange-50 text-orange-800 rounded-xl font-medium text-sm text-center">
                   This user hasn't provided any contact information.
                 </div>

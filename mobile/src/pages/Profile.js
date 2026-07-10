@@ -4,7 +4,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { API_URL } from '../api/config';
-import { X, Plus, Image as ImageIcon, Box, Heart, AlertTriangle, CheckCircle, Clock, User } from 'lucide-react-native';
+import { X, Plus, Image as ImageIcon, Box, Heart, AlertTriangle, CheckCircle, Clock, User, Edit2, Trash2 } from 'lucide-react-native';
 
 export default function Profile({ user: globalUser, setUser: setGlobalUser }) {
   const [user, setUser] = useState(null);
@@ -22,6 +22,10 @@ export default function Profile({ user: globalUser, setUser: setGlobalUser }) {
   // Profile Form state
   const [editName, setEditName] = useState('');
   const [avatarUri, setAvatarUri] = useState(null);
+
+  // Edit states
+  const [editPetId, setEditPetId] = useState(null);
+  const [editProductId, setEditProductId] = useState(null);
 
   // Product Form state
   const [productForm, setProductForm] = useState({
@@ -129,25 +133,34 @@ export default function Profile({ user: globalUser, setUser: setGlobalUser }) {
       const formData = new FormData();
       Object.keys(petForm).forEach(key => formData.append(key, petForm[key]));
       
-      if (petPhotoUri) {
+      if (petPhotoUri && !petPhotoUri.startsWith('http')) {
         const filename = petPhotoUri.split('/').pop();
         const match = /\.(\w+)$/.exec(filename);
         const type = match ? `image/${match[1]}` : `image`;
         formData.append('photos', { uri: petPhotoUri, name: filename, type });
       }
 
-      const res = await axios.post(`${API_URL}/api/v1/pets`, formData, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-      });
+      if (editPetId) {
+        const res = await axios.patch(`${API_URL}/api/v1/pets/my/${editPetId}`, formData, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        });
+        setPets(pets.map(p => p._id === editPetId ? res.data.data : p));
+        Alert.alert('Success', 'Pet updated!');
+      } else {
+        const res = await axios.post(`${API_URL}/api/v1/pets`, formData, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        });
+        setPets([res.data.data, ...pets]);
+        Alert.alert('Success', 'Pet added!');
+      }
       
-      setPets([res.data.data, ...pets]);
       setActiveModal(null);
       setPetForm({ name: '', species: 'Dog', breed: '', age: '', gender: 'Male', weight: '', vaccinationStatus: false, location: '', status: 'personal', fee: '', contactNumber: '', whatsappNumber: '', description: '' });
       setPetPhotoUri(null);
-      Alert.alert('Success', 'Pet added!');
+      setEditPetId(null);
     } catch (err) {
       console.error(err);
-      Alert.alert('Error', 'Failed to add pet');
+      Alert.alert('Error', 'Failed to save pet');
     }
   };
 
@@ -157,26 +170,117 @@ export default function Profile({ user: globalUser, setUser: setGlobalUser }) {
       const formData = new FormData();
       Object.keys(productForm).forEach(key => formData.append(key, productForm[key]));
       
-      if (productPhotoUri) {
+      if (productPhotoUri && !productPhotoUri.startsWith('http')) {
         const filename = productPhotoUri.split('/').pop();
         const match = /\.(\w+)$/.exec(filename);
         const type = match ? `image/${match[1]}` : `image`;
         formData.append('photos', { uri: productPhotoUri, name: filename, type });
       }
 
-      const res = await axios.post(`${API_URL}/api/v1/products`, formData, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-      });
+      if (editProductId) {
+        const res = await axios.patch(`${API_URL}/api/v1/products/my/${editProductId}`, formData, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        });
+        setProducts(products.map(p => p._id === editProductId ? res.data.data : p));
+        Alert.alert('Success', 'Item updated!');
+      } else {
+        const res = await axios.post(`${API_URL}/api/v1/products`, formData, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        });
+        setProducts([res.data.data, ...products]);
+        Alert.alert('Success', 'Product added!');
+      }
       
-      setProducts([res.data.data, ...products]);
       setActiveModal(null);
       setProductForm({ name: '', category: 'Food & Treats', price: '', stock: '', description: '' });
       setProductPhotoUri(null);
-      Alert.alert('Success', 'Product added!');
+      setEditProductId(null);
     } catch (err) {
       console.error(err);
-      Alert.alert('Error', 'Failed to add product');
+      Alert.alert('Error', 'Failed to save product');
     }
+  };
+
+  const handleDeletePet = (petId) => {
+    Alert.alert('Delete Pet', 'Are you sure you want to delete this pet?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        try {
+          const token = await getToken();
+          await axios.delete(`${API_URL}/api/v1/pets/my/${petId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setPets(pets.filter(p => p._id !== petId));
+          Alert.alert('Success', 'Pet deleted');
+        } catch (err) {
+          Alert.alert('Error', 'Failed to delete pet');
+        }
+      }}
+    ]);
+  };
+
+  const handleDeleteProduct = (productId) => {
+    Alert.alert('Delete Item', 'Are you sure you want to delete this item?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        try {
+          const token = await getToken();
+          await axios.delete(`${API_URL}/api/v1/products/my/${productId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setProducts(products.filter(p => p._id !== productId));
+          Alert.alert('Success', 'Item deleted');
+        } catch (err) {
+          Alert.alert('Error', 'Failed to delete item');
+        }
+      }}
+    ]);
+  };
+
+  const handleOpenPetModal = (pet = null) => {
+    if (pet) {
+      setPetForm({
+        name: pet.name || '',
+        species: pet.species || 'Dog',
+        breed: pet.breed || '',
+        age: pet.age || '',
+        gender: pet.gender || 'Male',
+        weight: pet.weight || '',
+        vaccinationStatus: pet.vaccinationStatus || false,
+        location: pet.location || '',
+        status: pet.status || 'personal',
+        fee: pet.fee ? String(pet.fee) : '',
+        contactNumber: pet.contactNumber || '',
+        whatsappNumber: pet.whatsappNumber || '',
+        description: pet.description || ''
+      });
+      setPetPhotoUri(pet.photos?.[0] || null);
+      setEditPetId(pet._id);
+    } else {
+      setPetForm({ name: '', species: 'Dog', breed: '', age: '', gender: 'Male', weight: '', vaccinationStatus: false, location: '', status: 'personal', fee: '', contactNumber: '', whatsappNumber: '', description: '' });
+      setPetPhotoUri(null);
+      setEditPetId(null);
+    }
+    setActiveModal('pet');
+  };
+
+  const handleOpenProductModal = (product = null) => {
+    if (product) {
+      setProductForm({
+        name: product.name || '',
+        category: product.category || 'Food & Treats',
+        price: product.price ? String(product.price) : '',
+        stock: product.stock ? String(product.stock) : '',
+        description: product.description || ''
+      });
+      setProductPhotoUri(product.photos?.[0] || null);
+      setEditProductId(product._id);
+    } else {
+      setProductForm({ name: '', category: 'Food & Treats', price: '', stock: '', description: '' });
+      setProductPhotoUri(null);
+      setEditProductId(null);
+    }
+    setActiveModal('product');
   };
 
   // Profile rendering logic...
@@ -273,7 +377,7 @@ export default function Profile({ user: globalUser, setUser: setGlobalUser }) {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 justify-end bg-black/40">
           <View className="bg-white rounded-t-3xl p-6 h-5/6">
             <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-xl font-bold text-gray-800">Add Pet</Text>
+              <Text className="text-xl font-bold text-gray-800">{editPetId ? 'Edit Pet' : 'Add Pet'}</Text>
               <TouchableOpacity onPress={() => setActiveModal(null)}>
                 <X color="gray" size={24} />
               </TouchableOpacity>
@@ -300,7 +404,7 @@ export default function Profile({ user: globalUser, setUser: setGlobalUser }) {
                 <View className="flex-1"><Text className="text-xs font-bold text-gray-600 mb-1">ADOPTION FEE</Text><TextInput keyboardType="numeric" value={petForm.fee} onChangeText={t => setPetForm({...petForm, fee: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="Free or 50" /></View>
               </View>
               <View><Text className="text-xs font-bold text-gray-600 mb-1">DESCRIPTION</Text><TextInput multiline numberOfLines={3} textAlignVertical="top" value={petForm.description} onChangeText={t => setPetForm({...petForm, description: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="A friendly dog..." /></View>
-              <TouchableOpacity onPress={handleSavePet} className="w-full bg-orange-500 py-4 rounded-xl mt-4 items-center mb-10"><Text className="text-white font-bold">Add Pet</Text></TouchableOpacity>
+              <TouchableOpacity onPress={handleSavePet} className="w-full bg-orange-500 py-4 rounded-xl mt-4 items-center mb-10"><Text className="text-white font-bold">{editPetId ? 'Save Changes' : 'Add Pet'}</Text></TouchableOpacity>
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
@@ -311,7 +415,7 @@ export default function Profile({ user: globalUser, setUser: setGlobalUser }) {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 justify-end bg-black/40">
           <View className="bg-white rounded-t-3xl p-6 h-5/6">
             <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-xl font-bold text-gray-800">Add Item</Text>
+              <Text className="text-xl font-bold text-gray-800">{editProductId ? 'Edit Item' : 'Add Item'}</Text>
               <TouchableOpacity onPress={() => setActiveModal(null)}>
                 <X color="gray" size={24} />
               </TouchableOpacity>
@@ -326,7 +430,7 @@ export default function Profile({ user: globalUser, setUser: setGlobalUser }) {
                 <View className="flex-1"><Text className="text-xs font-bold text-gray-600 mb-1">STOCK</Text><TextInput keyboardType="numeric" value={productForm.stock} onChangeText={t => setProductForm({...productForm, stock: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="10" /></View>
               </View>
               <View><Text className="text-xs font-bold text-gray-600 mb-1">DESCRIPTION</Text><TextInput multiline numberOfLines={3} textAlignVertical="top" value={productForm.description} onChangeText={t => setProductForm({...productForm, description: t})} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base" placeholder="A high quality collar..." /></View>
-              <TouchableOpacity onPress={handleSaveProduct} className="w-full bg-blue-500 py-4 rounded-xl mt-4 items-center mb-10"><Text className="text-white font-bold">List Item</Text></TouchableOpacity>
+              <TouchableOpacity onPress={handleSaveProduct} className="w-full bg-blue-500 py-4 rounded-xl mt-4 items-center mb-10"><Text className="text-white font-bold">{editProductId ? 'Save Changes' : 'List Item'}</Text></TouchableOpacity>
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
@@ -336,7 +440,7 @@ export default function Profile({ user: globalUser, setUser: setGlobalUser }) {
       <View className="mb-8">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-xl font-bold text-gray-800">My Pets</Text>
-          <TouchableOpacity onPress={() => setActiveModal('pet')} className="bg-orange-100 px-3 py-1.5 rounded-lg flex-row items-center">
+          <TouchableOpacity onPress={() => handleOpenPetModal()} className="bg-orange-100 px-3 py-1.5 rounded-lg flex-row items-center">
             <Plus color="#f97316" size={16} />
             <Text className="text-orange-500 font-bold ml-1">Add Pet</Text>
           </TouchableOpacity>
@@ -357,6 +461,14 @@ export default function Profile({ user: globalUser, setUser: setGlobalUser }) {
                 />
                 <Text className="font-bold text-lg text-gray-800">{pet.name}</Text>
                 <Text className="text-gray-500 text-sm">{pet.breed || pet.species}</Text>
+                <View className="flex-row justify-between mt-3 pt-3 border-t border-gray-100">
+                  <TouchableOpacity onPress={() => handleOpenPetModal(pet)} className="flex-row items-center p-1">
+                    <Edit2 color="#3b82f6" size={16} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDeletePet(pet._id)} className="flex-row items-center p-1">
+                    <Trash2 color="#ef4444" size={16} />
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
           </ScrollView>
@@ -367,7 +479,7 @@ export default function Profile({ user: globalUser, setUser: setGlobalUser }) {
       <View className="mb-12">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-xl font-bold text-gray-800">My Shop Items</Text>
-          <TouchableOpacity onPress={() => setActiveModal('product')} className="bg-blue-50 px-3 py-1.5 rounded-lg flex-row items-center">
+          <TouchableOpacity onPress={() => handleOpenProductModal()} className="bg-blue-50 px-3 py-1.5 rounded-lg flex-row items-center">
             <Plus color="#3b82f6" size={16} />
             <Text className="text-blue-500 font-bold ml-1">Add Item</Text>
           </TouchableOpacity>
@@ -388,7 +500,15 @@ export default function Profile({ user: globalUser, setUser: setGlobalUser }) {
                 />
                 <Text className="font-bold text-gray-800" numberOfLines={1}>{product.name}</Text>
                 <Text className="text-orange-500 font-bold mt-1">PKR {product.price}</Text>
-                <Text className="text-gray-400 text-xs mt-1">Stock: {product.stock}</Text>
+                <Text className="text-gray-400 text-xs mt-1 mb-2">Stock: {product.stock}</Text>
+                <View className="flex-row justify-between mt-auto pt-3 border-t border-gray-100">
+                  <TouchableOpacity onPress={() => handleOpenProductModal(product)} className="flex-row items-center p-1">
+                    <Edit2 color="#3b82f6" size={16} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDeleteProduct(product._id)} className="flex-row items-center p-1">
+                    <Trash2 color="#ef4444" size={16} />
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
           </ScrollView>

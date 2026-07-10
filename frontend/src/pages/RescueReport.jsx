@@ -24,6 +24,8 @@ export default function RescueReport() {
   const [location, setLocation] = useState('');
   const [mapPosition, setMapPosition] = useState([34.1495, 73.2115]); // Abbottabad, Pakistan
   const [description, setDescription] = useState('');
+  const [contactNumber, setContactNumber] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null); // 'success' or 'error'
@@ -197,6 +199,8 @@ export default function RescueReport() {
       formData.append('urgencyLevel', urgencyLevel);
       formData.append('location', location);
       formData.append('description', description);
+      if (contactNumber) formData.append('contactNumber', contactNumber);
+      if (whatsappNumber) formData.append('whatsappNumber', whatsappNumber);
       
       photos.forEach(photo => {
         formData.append('photos', photo);
@@ -216,6 +220,8 @@ export default function RescueReport() {
       setUrgencyLevel('');
       setLocation('');
       setDescription('');
+      setContactNumber('');
+      setWhatsappNumber('');
       
       fetchRecentReports(); // Refresh sidebar
 
@@ -417,6 +423,31 @@ export default function RescueReport() {
                 <option value="Medium - Needs Attention">Medium - Needs Attention</option>
                 <option value="Low - Stable">Low - Stable</option>
               </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-800 mb-3">Contact Number</label>
+              <input 
+                type="tel"
+                value={contactNumber}
+                onChange={e => setContactNumber(e.target.value)}
+                disabled={isSubmitting}
+                placeholder="Your phone number..."
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-800 mb-3">WhatsApp Number</label>
+              <input 
+                type="tel"
+                value={whatsappNumber}
+                onChange={e => setWhatsappNumber(e.target.value)}
+                disabled={isSubmitting}
+                placeholder="Include country code, e.g. +92..."
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange"
+              />
             </div>
           </div>
 

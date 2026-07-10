@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { ClipboardList, Heart, AlertTriangle, Calendar, ShoppingBag } from 'lucide-react-native';
+import { ClipboardList, Heart, AlertTriangle, Calendar, ShoppingBag, Phone, MessageCircle, X } from 'lucide-react-native';
 import { API_URL } from '../api/config';
 
 export default function Dashboard() {
@@ -19,6 +19,8 @@ export default function Dashboard() {
   });
   
   const [activityFeed, setActivityFeed] = useState([]);
+  const [selectedActivity, setSelectedActivity] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -273,7 +275,10 @@ export default function Dashboard() {
               return (
                 <TouchableOpacity 
                   key={index}
-                  onPress={() => navigation.navigate(details.route)}
+                  onPress={() => {
+                    setSelectedActivity(item);
+                    setIsModalOpen(true);
+                  }}
                   className={`flex-row items-start p-3 rounded-xl mb-2 ${details.wrapperClass}`}
                 >
                   <View className={`w-10 h-10 rounded-full items-center justify-center mt-1 mr-4 ${details.bgClass}`}>
@@ -302,6 +307,86 @@ export default function Dashboard() {
           </View>
         )}
       </View>
+
+      <Modal
+        visible={isModalOpen}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsModalOpen(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center p-4">
+          <View className="bg-white rounded-3xl p-6 shadow-xl relative">
+            <TouchableOpacity 
+              onPress={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 items-center justify-center rounded-full bg-gray-100 z-10"
+            >
+              <X color="#4b5563" size={20} />
+            </TouchableOpacity>
+
+            {selectedActivity && (
+              <View>
+                <Text className="text-2xl font-bold text-gray-800 mb-6">Activity Details</Text>
+                
+                <View className="mb-4">
+                  <Text className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Type</Text>
+                  <Text className="text-lg font-bold text-gray-800">
+                    {selectedActivity.feedType === 'report' ? 'Rescue Report' : 'Lost Pet Alert'}
+                  </Text>
+                </View>
+
+                <View className="mb-4">
+                  <Text className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Animal</Text>
+                  <Text className="text-lg font-bold text-gray-800">
+                    {selectedActivity.animalType || selectedActivity.species || selectedActivity.name || 'Unknown'}
+                  </Text>
+                </View>
+
+                <View className="mb-4">
+                  <Text className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Location</Text>
+                  <Text className="text-gray-800">{selectedActivity.location || 'Unknown'}</Text>
+                </View>
+
+                <View className="mb-6">
+                  <Text className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Description</Text>
+                  <Text className="text-gray-800 leading-5">{selectedActivity.description || 'No description provided.'}</Text>
+                </View>
+
+                <View className="border-t border-gray-100 pt-6">
+                  <Text className="font-bold text-gray-800 mb-4">Contact Information</Text>
+                  
+                  {(selectedActivity.contactNumber || selectedActivity.owner?.contactNumber || selectedActivity.reporter?.contactNumber) && (
+                    <TouchableOpacity 
+                      onPress={() => Linking.openURL(`tel:${selectedActivity.contactNumber || selectedActivity.owner?.contactNumber || selectedActivity.reporter?.contactNumber}`)}
+                      className="flex-row items-center p-4 bg-gray-50 rounded-xl mb-3"
+                    >
+                      <View className="w-8 h-8 rounded-full bg-white items-center justify-center shadow-sm mr-3">
+                        <Phone color="#4b5563" size={16} />
+                      </View>
+                      <Text className="font-bold text-gray-800">{selectedActivity.contactNumber || selectedActivity.owner?.contactNumber || selectedActivity.reporter?.contactNumber}</Text>
+                    </TouchableOpacity>
+                  )}
+                  
+                  {(selectedActivity.whatsappNumber || selectedActivity.owner?.whatsappNumber || selectedActivity.reporter?.whatsappNumber) && (
+                    <TouchableOpacity 
+                      onPress={() => Linking.openURL(`https://wa.me/${(selectedActivity.whatsappNumber || selectedActivity.owner?.whatsappNumber || selectedActivity.reporter?.whatsappNumber).replace(/\D/g, '')}`)}
+                      className="flex-row items-center p-4 bg-[#25D366]/10 rounded-xl mb-3"
+                    >
+                      <View className="w-8 h-8 rounded-full bg-white items-center justify-center shadow-sm mr-3">
+                        <MessageCircle color="#16a34a" size={16} />
+                      </View>
+                      <Text className="font-bold text-[#16a34a]">{selectedActivity.whatsappNumber || selectedActivity.owner?.whatsappNumber || selectedActivity.reporter?.whatsappNumber}</Text>
+                    </TouchableOpacity>
+                  )}
+                  
+                  {(!selectedActivity.contactNumber && !selectedActivity.owner?.contactNumber && !selectedActivity.reporter?.contactNumber && !selectedActivity.whatsappNumber && !selectedActivity.owner?.whatsappNumber && !selectedActivity.reporter?.whatsappNumber) && (
+                    <Text className="text-gray-500 text-sm italic">No contact information provided.</Text>
+                  )}
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
 
     </ScrollView>
   );

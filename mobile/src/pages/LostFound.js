@@ -23,7 +23,7 @@ export default function LostFound() {
   
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', species: 'Dog', breed: '', location: '', lastSeenDate: '', description: ''
+    name: '', species: 'Dog', breed: '', location: '', lastSeenDate: '', description: '', contactNumber: '', whatsappNumber: ''
   });
   const [photoUri, setPhotoUri] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,13 +85,25 @@ export default function LostFound() {
       return;
     }
 
+    if (formData.lastSeenDate) {
+      const parsedDate = new Date(formData.lastSeenDate);
+      if (isNaN(parsedDate.getTime())) {
+        Alert.alert('Error', 'Please enter a valid Last Seen Date (e.g., 2024-05-26 14:30)');
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const stored = await AsyncStorage.getItem('kitpup_user');
       let token = stored ? JSON.parse(stored).token : '';
 
       const data = new FormData();
-      Object.keys(formData).forEach(key => data.append(key, formData[key]));
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== '') {
+          data.append(key, formData[key]);
+        }
+      });
       data.append('status', 'lost');
       
       if (photoUri) {
@@ -109,7 +121,7 @@ export default function LostFound() {
       });
       
       setIsReportOpen(false);
-      setFormData({ name: '', species: 'Dog', breed: '', location: '', lastSeenDate: '', description: '' });
+      setFormData({ name: '', species: 'Dog', breed: '', location: '', lastSeenDate: '', description: '', contactNumber: '', whatsappNumber: '' });
       setPhotoUri(null);
       Alert.alert('Success', 'Alert posted! Community has been notified.');
       
@@ -117,7 +129,8 @@ export default function LostFound() {
       else setActiveTab('lost');
     } catch (err) {
       console.error(err);
-      Alert.alert('Error', 'Failed to report pet.');
+      const errorMsg = err.response?.data?.error || err.message || 'Unknown error';
+      Alert.alert('Error', `Failed to report pet: ${errorMsg}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -299,6 +312,17 @@ export default function LostFound() {
             <Text className="text-sm font-bold text-gray-700 mb-1">Last Seen Date & Time (YYYY-MM-DD HH:MM)</Text>
             <TextInput value={formData.lastSeenDate} onChangeText={t => setFormData({...formData, lastSeenDate: t})} className="w-full border border-gray-200 rounded-xl px-4 py-3 mb-4" />
 
+            <View className="flex-row gap-4 mb-4">
+              <View className="flex-1">
+                <Text className="text-sm font-bold text-gray-700 mb-1">Contact Number</Text>
+                <TextInput value={formData.contactNumber} onChangeText={t => setFormData({...formData, contactNumber: t})} keyboardType="phone-pad" className="w-full border border-gray-200 rounded-xl px-4 py-3" placeholder="Phone..." />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm font-bold text-gray-700 mb-1">WhatsApp</Text>
+                <TextInput value={formData.whatsappNumber} onChangeText={t => setFormData({...formData, whatsappNumber: t})} keyboardType="phone-pad" className="w-full border border-gray-200 rounded-xl px-4 py-3" placeholder="+92..." />
+              </View>
+            </View>
+
             <Text className="text-sm font-bold text-gray-700 mb-1">Description</Text>
             <TextInput multiline numberOfLines={3} value={formData.description} onChangeText={t => setFormData({...formData, description: t})} className="w-full border border-gray-200 rounded-xl px-4 py-3 mb-4 text-top" textAlignVertical="top" />
 
@@ -379,27 +403,27 @@ export default function LostFound() {
               
               <Text className="text-xl font-bold mb-6">Contact Owner</Text>
               
-              {selectedPet.owner?.contactNumber && (
+              {(selectedPet.owner?.contactNumber || selectedPet.contactNumber) && (
                 <TouchableOpacity 
-                  onPress={() => Linking.openURL(`tel:${selectedPet.owner.contactNumber}`)}
+                  onPress={() => Linking.openURL(`tel:${selectedPet.contactNumber || selectedPet.owner.contactNumber}`)}
                   className="flex-row items-center p-4 bg-gray-50 rounded-xl mb-3"
                 >
                   <Phone color="black" size={20} className="mr-3" />
-                  <Text className="font-bold">{selectedPet.owner.contactNumber}</Text>
+                  <Text className="font-bold">{selectedPet.contactNumber || selectedPet.owner.contactNumber}</Text>
                 </TouchableOpacity>
               )}
               
-              {selectedPet.owner?.whatsappNumber && (
+              {(selectedPet.owner?.whatsappNumber || selectedPet.whatsappNumber) && (
                 <TouchableOpacity 
-                  onPress={() => Linking.openURL(`https://wa.me/${selectedPet.owner.whatsappNumber.replace(/\D/g, '')}`)}
+                  onPress={() => Linking.openURL(`https://wa.me/${(selectedPet.whatsappNumber || selectedPet.owner.whatsappNumber).replace(/\D/g, '')}`)}
                   className="flex-row items-center p-4 bg-[#25D366] rounded-xl mb-3"
                 >
                   <MessageCircle color="white" size={20} className="mr-3" />
-                  <Text className="font-bold text-white">{selectedPet.owner.whatsappNumber}</Text>
+                  <Text className="font-bold text-white">{selectedPet.whatsappNumber || selectedPet.owner.whatsappNumber}</Text>
                 </TouchableOpacity>
               )}
               
-              {(!selectedPet.owner?.contactNumber && !selectedPet.owner?.whatsappNumber) && (
+              {(!selectedPet.owner?.contactNumber && !selectedPet.contactNumber && !selectedPet.owner?.whatsappNumber && !selectedPet.whatsappNumber) && (
                 <Text className="text-gray-500 text-center py-4">No contact info available.</Text>
               )}
             </View>

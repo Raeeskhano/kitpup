@@ -38,6 +38,14 @@ const reportSchema = new mongoose.Schema({
   dateReported: {
     type: Date,
     default: Date.now
+  },
+  contactNumber: {
+    type: String,
+    required: false
+  },
+  whatsappNumber: {
+    type: String,
+    required: false
   }
 }, { timestamps: true });
 
